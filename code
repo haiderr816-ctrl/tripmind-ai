@@ -1,0 +1,306 @@
+'use client';
+
+import { Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+
+function DayCard({ day, destination }: { day: any; destination: string }) {
+  const [imgUrl, setImgUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const query = day.mainActivity
+      ? `${destination} ${day.mainActivity}`
+      : `${destination} ${day.title}`;
+
+    fetch(`/api/photo?query=${encodeURIComponent(query)}`)
+      .then(r => r.json())
+      .then(d => { if (d.url) setImgUrl(d.url); });
+  }, [day, destination]);
+
+  return (
+    <div className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100">
+
+      {/* Day image */}
+      {imgUrl ? (
+        <img
+          src={imgUrl}
+          alt={day.title}
+          className="w-full h-48 object-cover"
+        />
+      ) : (
+        <div className="w-full h-48 bg-gradient-to-r from-blue-100 to-blue-200 animate-pulse" />
+      )}
+
+      {/* Day header */}
+      <div className="px-6 pt-5 pb-3 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">
+            Day {day.day}
+          </span>
+          <h3 className="text-lg font-semibold text-gray-800">{day.title}</h3>
+          <span className="text-gray-400 text-sm ml-auto">{day.date}</span>
+        </div>
+      </div>
+
+      {/* Schedule */}
+      <div className="px-6 py-4 space-y-4">
+        {day.schedule?.map((item: any, i: number) => (
+          <div key={i} className="flex gap-4">
+            <div className="w-20 shrink-0 text-xs font-semibold text-blue-600 pt-1">
+              {item.time}
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-800">{item.activity}</p>
+              <p className="text-gray-500 text-sm mt-0.5">{item.description}</p>
+            </div>
+            {item.cost && (
+              <div className="shrink-0 text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-lg h-fit">
+                {item.cost}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Accommodation */}
+      {day.accommodation && (
+        <div className="mx-6 mb-4 bg-amber-50 border border-amber-100 rounded-xl p-4">
+          <p className="text-xs font-bold text-amber-700 uppercase tracking-wide mb-1">🏨 Accommodation</p>
+          <p className="font-medium text-gray-800">{day.accommodation.name}</p>
+          <p className="text-sm text-gray-500">{day.accommodation.type} · {day.accommodation.estimatedCost}</p>
+        </div>
+      )}
+
+      {/* Tips */}
+      {day.tips && (
+        <div className="mx-6 mb-5 bg-purple-50 border border-purple-100 rounded-xl p-4">
+          <p className="text-xs font-bold text-purple-700 uppercase tracking-wide mb-1">💡 Local Tip</p>
+          <p className="text-sm text-gray-700">{day.tips}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ItineraryDisplay({ itinerary, onSave }: { itinerary: any; onSave: () => void }) {
+  return (
+    <div className="mt-10">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">{itinerary.destination}</h2>
+          <p className="text-gray-500 mt-1">{itinerary.startDate} → {itinerary.endDate} · {itinerary.budget} budget</p>
+        </div>
+        <button
+          onClick={onSave}
+          className="bg-green-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-700 transition shadow"
+        >
+          💾 Save Trip
+        </button>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-8">
+        <p className="text-blue-800 text-sm leading-relaxed">{itinerary.summary}</p>
+      </div>
+
+      <div className="space-y-10">
+        {itinerary.days?.map((day: any) => (
+          <DayCard key={day.day} day={day} destination={itinerary.destination} />
+        ))}
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {itinerary.packingTips?.length > 0 && (
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+            <p className="font-bold text-gray-800 mb-3">🎒 Packing Tips</p>
+            <ul className="space-y-1">
+              {itinerary.packingTips.map((tip: string, i: number) => (
+                <li key={i} className="text-sm text-gray-600 flex gap-2">
+                  <span className="text-blue-400">•</span> {tip}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-3">
+          <p className="font-bold text-gray-800 mb-3">📊 Trip Summary</p>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Total Estimated Cost</span>
+            <span className="font-semibold text-green-600">{itinerary.totalEstimatedCost}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-500">Best Time to Visit</span>
+            <span className="font-semibold text-gray-800">{itinerary.bestTimeToVisit}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={onSave}
+        className="mt-8 w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow"
+      >
+        💾 Save This Trip
+      </button>
+    </div>
+  );
+}
+
+function PlanForm() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const [destination, setDestination] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [budget, setBudget] = useState('medium');
+  const [interests, setInterests] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [itinerary, setItinerary] = useState<any>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const d = searchParams.get('destination');
+    const s = searchParams.get('startDate');
+    const e = searchParams.get('endDate');
+    if (d) setDestination(d);
+    if (s) setStartDate(s);
+    if (e) setEndDate(e);
+  }, [searchParams]);
+
+  async function handleGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setItinerary(null);
+
+    try {
+      const res = await fetch('/api/itinerary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destination, startDate, endDate, budget, interests }),
+      });
+      if (!res.ok) throw new Error('Failed to generate itinerary');
+      const data = await res.json();
+      setItinerary(data);
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
+    if (!itinerary) return;
+    try {
+      const res = await fetch('/api/trips', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destination, startDate, endDate, budget, interests, itinerary }),
+      });
+      if (!res.ok) throw new Error('Failed to save trip');
+      router.push('/dashboard/trips');
+    } catch (err: any) {
+      setError(err.message || 'Failed to save');
+    }
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto p-6">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6">✈️ Plan a Trip</h1>
+
+      <form onSubmit={handleGenerate} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">Destination</label>
+          <input
+            type="text"
+            value={destination}
+            onChange={e => setDestination(e.target.value)}
+            placeholder="e.g. Tokyo, Japan"
+            required
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">Start Date</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              required
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-gray-700">End Date</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              required
+              className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">Budget</label>
+          <select
+            value={budget}
+            onChange={e => setBudget(e.target.value)}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          >
+            <option value="budget">Budget</option>
+            <option value="medium">Medium</option>
+            <option value="luxury">Luxury</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1 text-gray-700">Interests</label>
+          <input
+            type="text"
+            value={interests}
+            onChange={e => setInterests(e.target.value)}
+            placeholder="e.g. food, hiking, museums"
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 transition shadow"
+        >
+          {loading ? '🤖 Generating your itinerary...' : '✨ Generate Itinerary'}
+        </button>
+      </form>
+
+      {error && (
+        <p className="mt-4 text-red-500 text-sm text-center">{error}</p>
+      )}
+
+      {itinerary && (
+        <ItineraryDisplay itinerary={itinerary} onSave={handleSave} />
+      )}
+    </div>
+  );
+}
+
+export default function PlanPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-3xl mx-auto p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/3" />
+          <div className="h-10 bg-gray-200 rounded" />
+          <div className="h-10 bg-gray-200 rounded" />
+          <div className="h-10 bg-gray-200 rounded" />
+        </div>
+      </div>
+    }>
+      <PlanForm />
+    </Suspense>
+  );
+}

@@ -1,0 +1,1 @@
+export const userTrips = new Map<string, any[]>();
