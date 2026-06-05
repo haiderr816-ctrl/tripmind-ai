@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "TripMind AI - Smart Travel Itinerary Planner",
   description: "AI-powered travel planning made simple",
+  verification: {
+    google: "JGMyCk3xQNHqOxw34Yz5t-WY8PcWMcVowV-O7FPTf50",
+  },
 };
 
 export default function RootLayout({
