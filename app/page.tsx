@@ -85,7 +85,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative z-10 max-w-4xl mx-auto px-4">
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-4">Your AI Travel Planner</h1>
-          <p className="text-base md:text-xl text-white/90 mb-8">
+          <p className="text-base md:text-xl text-white/90 mb-8">Plan your perfect trip in seconds. Powered by AI, personalized for you.</p>
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 max-w-3xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <input
@@ -178,7 +178,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-2 text-lg font-semibold">
                   <Plane size={18} className="text-indigo-500" />
-                  {flight.from} → {flight.to}
+                  {flight.from} &rarr; {flight.to}
                 </div>
                 <p className="text-2xl font-bold text-gray-900 mt-2">{flight.price}</p>
                 <button className="mt-4 w-full border border-gray-200 rounded-xl py-2 text-gray-700 hover:bg-gray-50 transition">Select</button>
