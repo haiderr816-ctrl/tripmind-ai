@@ -18,7 +18,7 @@ export async function POST(req: Request) {
         destination,
         startDate,
         endDate,
-        budget: Number(budget),
+        budget: String(budget),
         interests: JSON.stringify(interests),
         itinerary: JSON.stringify(itinerary),
       },
