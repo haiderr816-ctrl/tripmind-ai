@@ -1,180 +1,81 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Calendar, DollarSign, MapPin, ArrowLeft, Clock, Star, Lightbulb } from "lucide-react";
-
-interface ScheduleItem {
-  time: string;
-  activity: string;
-  location: string;
-}
-
-interface ItineraryDay {
-  day: number;
-  date: string;
-  summary: string;
-  schedule: ScheduleItem[];
-  accommodation: string;
-  tips: string[];
-}
-
-interface Trip {
-  id: string;
-  destination: string;
-  startDate: string;
-  endDate: string;
-  budget: number;
-  interests: string[];
-  itinerary: {
-    days: ItineraryDay[];
-    practicalTips?: string[];
-    summary?: string;
-  };
-}
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 
 export default function TripDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [trip, setTrip] = useState<Trip | null>(null);
+  const [trip, setTrip] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/get-trips")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.trips) {
-          const tripId = Array.isArray(id) ? id[0] : id;
-          const found = data.trips.find((t: Trip) => String(t.id) === String(tripId));
-          setTrip(found || null);
-        }
+    fetch('/api/get-trips')
+      .then(r => r.json())
+      .then(data => {
+        const tripId = Array.isArray(id) ? id[0] : id;
+        const found = data.trips?.find((t: any) => String(t.id) === String(tripId));
+        setTrip(found || null);
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [id]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
-      </div>
-    );
-  }
+  if (loading) return <div className="p-6 text-center">Loading...</div>;
+  if (!trip) return <div className="p-6 text-center">Trip not found. <button onClick={() => router.push('/dashboard/trips')} className="text-blue-600 underline">Go back</button></div>;
 
-  if (!trip) {
-    return (
-      <div className="max-w-3xl mx-auto text-center py-24">
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">Trip not found</h1>
-        <button
-          onClick={() => router.push("/dashboard/trips")}
-          className="text-indigo-600 hover:underline"
-        >
-          Back to My Trips
-        </button>
-      </div>
-    );
-  }
-
-  const days = trip.itinerary?.days || [];
-  const practicalTips = trip.itinerary?.practicalTips || [];
-  const summary = trip.itinerary?.summary || "";
+  const itinerary = typeof trip.itinerary === 'string' ? JSON.parse(trip.itinerary) : trip.itinerary;
 
   return (
-    <div className="max-w-4xl mx-auto pb-16">
-      {/* Back button */}
-      <button
-        onClick={() => router.push("/dashboard/trips")}
-        className="flex items-center gap-2 text-gray-500 hover:text-indigo-600 mb-6 transition"
-      >
-        <ArrowLeft size={16} /> Back to My Trips
+    <div className="max-w-3xl mx-auto p-6">
+      <button onClick={() => router.push('/dashboard/trips')} className="text-blue-600 text-sm mb-4 hover:underline">
+        ← Back to My Trips
       </button>
+      <h1 className="text-2xl font-bold text-gray-800 mb-1">{trip.destination}</h1>
+      <p className="text-gray-500 text-sm mb-6">{trip.startDate} → {trip.endDate} · {trip.budget} budget</p>
 
-      {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-pink-600 rounded-2xl p-8 text-white mb-8">
-        <h1 className="text-3xl font-bold capitalize mb-3">{trip.destination}</h1>
-        {summary && <p className="text-white/80 text-sm mb-4">{summary}</p>}
-        <div className="flex flex-wrap gap-4 text-sm opacity-90">
-          <span className="flex items-center gap-1">
-            <Calendar size={14} /> {trip.startDate} → {trip.endDate}
-          </span>
-          <span className="flex items-center gap-1">
-            <DollarSign size={14} /> Budget: ${trip.budget}
-          </span>
-          <span className="flex items-center gap-1">
-            <MapPin size={14} /> {trip.destination}
-          </span>
+      {itinerary?.summary && (
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6">
+          <p className="text-blue-800 text-sm">{itinerary.summary}</p>
         </div>
-        <div className="flex flex-wrap gap-2 mt-4">
-          {trip.interests.map((interest, i) => (
-            <span key={i} className="px-3 py-1 bg-white/20 rounded-full text-xs font-medium">
-              {interest}
-            </span>
-          ))}
-        </div>
-      </div>
+      )}
 
-      {/* Itinerary Days */}
       <div className="space-y-6">
-        {days.map((day) => (
-          <div key={day.day} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-lg font-bold text-indigo-600 mb-1">
-              Day {day.day} — {day.date}
-            </h2>
-            <p className="text-sm text-gray-500 mb-4">{day.summary}</p>
-
-            {/* Schedule */}
-            <div className="space-y-3 mb-4">
-              {(day.schedule || []).map((item, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="flex-shrink-0 flex items-center gap-1 text-xs text-gray-400 w-24">
-                    <Clock size={12} /> {item.time}
+        {itinerary?.days?.map((day: any) => (
+          <div key={day.day} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">Day {day.day}</span>
+              <h3 className="font-semibold text-gray-800">{day.title}</h3>
+              <span className="text-gray-400 text-sm ml-auto">{day.date}</span>
+            </div>
+            {day.cityOrArea && <p className="text-sm text-blue-500 mb-3">📍 {day.cityOrArea}</p>}
+            <div className="space-y-3">
+              {day.schedule?.map((item: any, i: number) => (
+                <div key={i} className="flex gap-3">
+                  <span className="w-20 shrink-0 text-xs font-semibold text-blue-600 pt-0.5">{item.time}</span>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-800 text-sm">{item.activity}</p>
+                    <p className="text-gray-500 text-xs">{item.description}</p>
                   </div>
-                  <div className="flex-1 border-l-2 border-indigo-100 pl-4">
-                    <p className="font-medium text-gray-900 text-sm">{item.activity}</p>
-                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
-                      <MapPin size={10} /> {item.location}
-                    </p>
-                  </div>
+                  {item.cost && <span className="text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded-lg h-fit">{item.cost}</span>}
                 </div>
               ))}
             </div>
-
-            {/* Accommodation */}
             {day.accommodation && (
-              <div className="flex items-center gap-2 bg-indigo-50 rounded-xl px-4 py-2 text-sm text-indigo-700 mt-3">
-                <Star size={14} /> Stay: {day.accommodation}
+              <div className="mt-4 bg-amber-50 border border-amber-100 rounded-xl p-3">
+                <p className="text-xs font-bold text-amber-700 mb-1">🏨 {day.accommodation.name}</p>
+                <p className="text-xs text-gray-500">{day.accommodation.type} · {day.accommodation.estimatedCost}</p>
               </div>
             )}
-
-            {/* Day tips */}
-            {(day.tips || []).length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {day.tips.map((tip, i) => (
-                  <span key={i} className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full">
-                    💡 {tip}
-                  </span>
-                ))}
+            {day.tips && (
+              <div className="mt-3 bg-purple-50 border border-purple-100 rounded-xl p-3">
+                <p className="text-xs font-bold text-purple-700 mb-1">💡 Local Tip</p>
+                <p className="text-xs text-gray-700">{day.tips}</p>
               </div>
             )}
           </div>
         ))}
       </div>
-
-      {/* Practical Tips */}
-      {practicalTips.length > 0 && (
-        <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 mt-6">
-          <h2 className="text-lg font-semibold text-amber-800 mb-3 flex items-center gap-2">
-            <Lightbulb size={18} /> Practical Tips
-          </h2>
-          <ul className="space-y-2">
-            {practicalTips.map((tip, i) => (
-              <li key={i} className="text-sm text-amber-700 flex items-start gap-2">
-                <span className="mt-1">•</span> {tip}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }
