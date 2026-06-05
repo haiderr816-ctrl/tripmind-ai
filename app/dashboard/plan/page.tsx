@@ -189,7 +189,7 @@ function PlanForm() {
   async function handleSave() {
     if (!itinerary) return;
     try {
-      const res = await fetch('/api/trips', {
+      const res = await fetch('/api/save-trip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ destination, startDate, endDate, budget, interests, itinerary }),
