@@ -3,10 +3,24 @@ const fs = require('fs');
 const content = `'use client';
 
 import { useEffect, useState } from 'react';
+import { useUser } from '@clerk/nextjs';
+
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  destination: string;
+  dates: string;
+  travelers: string;
+  budget: string;
+  createdAt: string;
+}
 
 export default function LeadsPage() {
-  const [leads, setLeads] = useState([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useUser();
 
   useEffect(() => {
     fetch('/api/get-leads')
@@ -17,6 +31,10 @@ export default function LeadsPage() {
       });
   }, []);
 
+  if (user?.primaryEmailAddress?.emailAddress !== 'haiderr816@gmail.com') {
+    return <div className="p-6 text-center text-gray-400">Access denied.</div>;
+  }
+
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
@@ -26,7 +44,7 @@ export default function LeadsPage() {
         <p className="text-center text-gray-400 py-20">No leads yet.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {leads.map((lead) => (
+          {leads.map((lead: Lead) => (
             <div key={lead.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-start justify-between mb-3">
                 <h3 className="font-semibold text-gray-800">{lead.name || 'Anonymous'}</h3>
@@ -46,7 +64,7 @@ export default function LeadsPage() {
                   <a href={"mailto:" + lead.email} className="flex-1 text-center bg-indigo-50 text-indigo-600 text-xs py-2 rounded-xl">Email</a>
                 )}
                 {lead.phone && (
-                  <a href={"https://wa.me/" + lead.phone.replace(/\D/g, '')} target="_blank" className="flex-1 text-center bg-green-50 text-green-600 text-xs py-2 rounded-xl">WhatsApp</a>
+                  <a href={"https://wa.me/" + lead.phone.replace(/\\D/g, '')} target="_blank" className="flex-1 text-center bg-green-50 text-green-600 text-xs py-2 rounded-xl">WhatsApp</a>
                 )}
               </div>
             </div>

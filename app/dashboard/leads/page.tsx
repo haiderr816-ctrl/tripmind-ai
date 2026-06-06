@@ -3,8 +3,20 @@
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  destination: string;
+  dates: string;
+  travelers: string;
+  budget: string;
+  createdAt: string;
+}
+
 export default function LeadsPage() {
-  const [leads, setLeads] = useState([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useUser();
 
@@ -30,7 +42,7 @@ export default function LeadsPage() {
         <p className="text-center text-gray-400 py-20">No leads yet.</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {leads.map((lead) => (
+          {leads.map((lead: Lead) => (
             <div key={lead.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
               <div className="flex items-start justify-between mb-3">
                 <h3 className="font-semibold text-gray-800">{lead.name || 'Anonymous'}</h3>
