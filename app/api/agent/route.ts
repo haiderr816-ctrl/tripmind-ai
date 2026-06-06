@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         reply: "Sorry about that! Could you please repeat what you just said?",
-        leadData: leadData || {},
+        leadData: {},
         readyToGenerate: false
       },
       { status: 500 }
