@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import DownloadPDF from '@/components/DownloadPDF';
 
 export default function TripDetailPage() {
   const { id } = useParams();
@@ -28,9 +29,13 @@ export default function TripDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto p-6">
-      <button onClick={() => router.push('/dashboard/trips')} className="text-blue-600 text-sm mb-4 hover:underline">
-        ← Back to My Trips
-      </button>
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={() => router.push('/dashboard/trips')} className="text-blue-600 text-sm hover:underline">
+          ← Back to My Trips
+        </button>
+        <DownloadPDF trip={trip} />
+      </div>
+
       <h1 className="text-2xl font-bold text-gray-800 mb-1">{trip.destination}</h1>
       <p className="text-gray-500 text-sm mb-6">{trip.startDate} → {trip.endDate} · {trip.budget} budget</p>
 

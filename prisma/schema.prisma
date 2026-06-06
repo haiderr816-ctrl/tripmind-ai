@@ -18,3 +18,16 @@ model Trip {
   itinerary   String
   createdAt   DateTime @default(now())
 }
+model Lead {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String   @default("")
+  phone       String   @default("")
+  destination String   @default("")
+  dates       String   @default("")
+  travelers   String   @default("")
+  budget      String   @default("")
+  interests   String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

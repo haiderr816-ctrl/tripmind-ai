@@ -12,13 +12,15 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Users
 } from "lucide-react";
 
 const navItems = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "Plan a Trip", href: "/dashboard/plan", icon: Calendar },
-  { name: "My Trips", href: "/dashboard/trips", icon: FolderHeart },
+ { name: "My Trips", href: "/dashboard/trips", icon: FolderHeart },
+  { name: "Leads", href: "/dashboard/leads", icon: Users },
   { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
