@@ -18,7 +18,7 @@ export default function DownloadPDF({ trip }: { trip: any }) {
       const margin = 15;
       const maxW = 180;
 
-      function checkPage(needed) {
+      function checkPage(needed?: number) {
         if (y + (needed || 10) > pageH - 20) { doc.addPage(); y = 20; }
       }
 
