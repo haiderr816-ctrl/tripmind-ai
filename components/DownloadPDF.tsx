@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Download } from 'lucide-react';
 
-export default function DownloadPDF({ trip }) {
+export default function DownloadPDF({ trip }: { trip: any }) {
   const [loading, setLoading] = useState(false);
 
   async function handleDownload() {
