@@ -6,17 +6,19 @@ import { Sparkles, MapPin, Calendar, DollarSign, Heart, Loader2, Globe, Plus, X 
 
 function parseDateString(raw: string): string {
   if (!raw) return '';
-  // Already YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
   try {
-    // Handle "July 10", "Aug 10", "August 10" etc
+    // Clean up input: "25 of july" → "25 july", "july 25" → "july 25"
+    const cleaned = raw
+      .replace(/\bof\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
     const year = new Date().getFullYear();
-    // Try with current year
-    let d = new Date(`${raw} ${year}`);
-    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-    // Try next year (for dates that have passed)
-    d = new Date(`${raw} ${year + 1}`);
-    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    // Try "25 July 2026" and "July 25 2026" formats
+    for (const attempt of [`${cleaned} ${year}`, `${cleaned} ${year + 1}`]) {
+      const d = new Date(attempt);
+      if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    }
   } catch {}
   return '';
 }
