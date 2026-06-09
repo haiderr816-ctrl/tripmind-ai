@@ -4,21 +4,28 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton, useUser } from "@clerk/nextjs";
-import { LayoutDashboard, Calendar, FolderHeart, CreditCard, Settings, LogOut, Menu, X, Users, Sparkles } from "lucide-react";
+import { LayoutDashboard, Calendar, FolderHeart, CreditCard, Settings, LogOut, Menu, X, Users, UserCheck, Sparkles } from "lucide-react";
 
-const navItems = [
-  { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Plan a Trip", href: "/dashboard/plan", icon: Calendar },
-  { name: "My Trips", href: "/dashboard/trips", icon: FolderHeart },
-  { name: "Leads", href: "/dashboard/leads", icon: Users },
-  { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
-];
+const ADMIN_EMAIL = "haiderr816@gmail.com";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isAdmin = user?.primaryEmailAddress?.emailAddress === ADMIN_EMAIL;
+
+  const navItems = [
+    { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Plan a Trip", href: "/dashboard/plan", icon: Calendar },
+    { name: "My Trips", href: "/dashboard/trips", icon: FolderHeart },
+    ...(isAdmin ? [
+      { name: "Leads", href: "/dashboard/leads", icon: Users },
+      { name: "Users", href: "/dashboard/users", icon: UserCheck },
+    ] : []),
+    { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
+    { name: "Settings", href: "/dashboard/settings", icon: Settings },
+  ];
 
   return (
     <div className="min-h-screen bg-[#f8fafc]">
