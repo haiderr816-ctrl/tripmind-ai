@@ -4,8 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { X, Send, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-const SARAH_PIC = "https://randomuser.me/api/portraits/women/44.jpg";
-
 const QUICK_REPLIES: Record<string, string[]> = {
   destination: ['Europe 🇪🇺', 'Asia 🌏', 'Americas 🌎', 'Middle East 🕌'],
   travelers: ['Solo 🧳', 'Couple 💑', 'Family 👨‍👩‍👧', 'Group 👥'],
@@ -13,18 +11,18 @@ const QUICK_REPLIES: Record<string, string[]> = {
   interests: ['Beach & Relaxation 🏖️', 'Culture & History 🏛️', 'Adventure 🏔️', 'Food & Nightlife 🍽️'],
   budget: ['Budget ($500-1000)', 'Mid-range ($1000-3000)', 'Luxury ($3000+)'],
   firsttime: ['Yes, first time!', 'No, been before'],
-  hotel: ['Boutique & Local 🏡', 'Luxury Chain 🏨', 'Whatever fits budget'],
+  hotel: ['3-Star 🏨', '4-Star ⭐⭐⭐⭐', '5-Star 🌟', 'Whatever fits budget'],
 };
 
 function getQuickReplies(message: string): string[] {
   const m = message.toLowerCase();
-  if (m.includes('where') || m.includes('destination') || m.includes('traveling to') || m.includes('thinking of')) return QUICK_REPLIES.destination;
-  if (m.includes('solo') || m.includes('flying') || m.includes('bringing') || m.includes('travelers')) return QUICK_REPLIES.travelers;
-  if (m.includes('luxury-and-relax') || m.includes('adventure-and-explore') || m.includes('travel style')) return QUICK_REPLIES.style;
-  if (m.includes('excites') || m.includes('food') || m.includes('history') || m.includes('interests')) return QUICK_REPLIES.interests;
-  if (m.includes('budget') || m.includes('rough') || m.includes('per person')) return QUICK_REPLIES.budget;
-  if (m.includes('first time') || m.includes('been before')) return QUICK_REPLIES.firsttime;
-  if (m.includes('boutique') || m.includes('luxury chains') || m.includes('hotel preference')) return QUICK_REPLIES.hotel;
+  if (m.includes('where') || m.includes('dreaming of') || m.includes('traveling to') || m.includes('country')) return QUICK_REPLIES.destination;
+  if (m.includes('solo') || m.includes('flying') || m.includes('bringing') || m.includes('someone special')) return QUICK_REPLIES.travelers;
+  if (m.includes('luxury-and-relax') || m.includes('adventure-and-explore') || m.includes('relax person')) return QUICK_REPLIES.style;
+  if (m.includes('excites') || m.includes('spiritual') || m.includes('nightlife') || m.includes('what excites')) return QUICK_REPLIES.interests;
+  if (m.includes('budget per person') || m.includes('rough budget') || m.includes('estimated budget')) return QUICK_REPLIES.budget;
+  if (m.includes('first time') || m.includes('been before') || m.includes('visited')) return QUICK_REPLIES.firsttime;
+  if (m.includes('hotel style') || m.includes('3-star') || m.includes('4-star') || m.includes('5-star') || m.includes('boutique') || m.includes('preferred hotel')) return QUICK_REPLIES.hotel;
   return [];
 }
 
@@ -32,13 +30,14 @@ export default function ChatAgent() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hi! I'm Sarah, your personal travel manager at TripMind AI 👋\n\nI'm so excited to help plan your trip. Where are you thinking of traveling to?" }
+    { role: 'assistant', content: "Hi! I'm Sarah, your personal travel manager at TripMind AI 👋\n\nI'm so excited to help plan your trip. Which country are you dreaming of visiting?" }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [leadData, setLeadData] = useState<any>({});
   const [readyToGenerate, setReadyToGenerate] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,7 +61,7 @@ export default function ChatAgent() {
       });
       const data = await res.json();
       setMessages([...newMessages, { role: 'assistant', content: data.reply }]);
-      setLeadData(data.leadData || {});
+      if (data.leadData) setLeadData((prev: any) => ({ ...prev, ...data.leadData }));
       if (data.readyToGenerate) setReadyToGenerate(true);
     } catch {
       setMessages([...newMessages, { role: 'assistant', content: "Sorry, something went wrong. Please try again!" }]);
@@ -73,67 +72,73 @@ export default function ChatAgent() {
 
   async function generateItinerary() {
     setGenerating(true);
+    setGenError('');
+
     try {
-      const cities = leadData.destination?.split(',').map((c: string) => c.trim()).filter(Boolean) || [];
-      const country = cities[cities.length - 1] || leadData.destination;
-      const mainCities = cities.length > 1 ? cities.slice(0, -1) : [];
+      // Parse destination into cities + country
+      const destRaw = leadData.destination || '';
+      const parts = destRaw.split(',').map((s: string) => s.trim()).filter(Boolean);
+      const country = parts[parts.length - 1] || destRaw;
+      const cities = parts.length > 1 ? parts.slice(0, -1) : [];
+
+      // Parse dates
+      const datesRaw = leadData.dates || '';
+      const dateParts = datesRaw.split(' to ');
+      const startDate = dateParts[0]?.trim() || '';
+      const endDate = dateParts[1]?.trim() || '';
+
+      const payload = {
+        destination: destRaw,
+        country,
+        cities,
+        startDate,
+        endDate,
+        budget: leadData.budget || 'Medium',
+        interests: leadData.interests || '',
+      };
 
       const res = await fetch('/api/itinerary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          destination: leadData.destination,
-          country,
-          cities: mainCities,
-          startDate: leadData.dates?.split(' to ')[0]?.trim() || leadData.dates,
-          endDate: leadData.dates?.split(' to ')[1]?.trim() || leadData.dates,
-          budget: leadData.budget || 'Medium',
-          interests: leadData.interests || '',
-        })
+        body: JSON.stringify(payload)
       });
+
       const data = await res.json();
+
       if (data.tripId) {
         setOpen(false);
         router.push('/dashboard/trips/' + data.tripId);
       } else {
-        setMessages(prev => [...prev, { role: 'assistant', content: "Hmm, something went wrong. Please try the Plan page directly!" }]);
+        setGenError(data.error || 'Something went wrong. Please try again.');
+        setMessages(prev => [...prev, { role: 'assistant', content: "Hmm, I couldn't generate that itinerary. Please try the Plan page directly!" }]);
       }
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry! Please try again or use the Plan page." }]);
+    } catch (e: any) {
+      setGenError('Network error. Please try again.');
+      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry! Connection issue. Please try again." }]);
     } finally {
       setGenerating(false);
     }
   }
 
   const lastMessage = messages[messages.length - 1];
-  const quickReplies = lastMessage?.role === 'assistant' ? getQuickReplies(lastMessage.content) : [];
+  const quickReplies = lastMessage?.role === 'assistant' && !loading ? getQuickReplies(lastMessage.content) : [];
 
   return (
     <>
       {/* Bubble */}
       <button onClick={() => setOpen(o => !o)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full overflow-hidden shadow-xl shadow-violet-300 hover:scale-110 transition-transform border-2 border-white">
-        {open ? (
-          <div className="w-full h-full bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center">
-            <X size={22} className="text-white" />
-          </div>
-        ) : (
-          <img src={SARAH_PIC} alt="Sarah" className="w-full h-full object-cover" />
-        )}
-        {!open && (
-          <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white" />
-        )}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full overflow-hidden shadow-xl shadow-violet-300 hover:scale-110 transition-transform border-2 border-white bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center">
+        {open ? <X size={22} className="text-white" /> : <Sparkles size={22} className="text-white" />}
+        {!open && <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white" />}
       </button>
 
       {/* Chat Window */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-h-[600px] flex flex-col bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="fixed bottom-24 right-6 z-50 w-[380px] flex flex-col bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden" style={{maxHeight: '600px'}}>
 
           {/* Header */}
-          <div className="bg-gradient-to-r from-violet-600 to-pink-600 p-4 flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl overflow-hidden border-2 border-white/40 shrink-0">
-              <img src={SARAH_PIC} alt="Sarah" className="w-full h-full object-cover" />
-            </div>
+          <div className="bg-gradient-to-r from-violet-600 to-pink-600 p-4 flex items-center gap-3 shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-white/20 flex items-center justify-center text-white font-bold text-lg shrink-0">S</div>
             <div>
               <p className="font-bold text-white text-sm">Sarah — Travel Manager</p>
               <div className="flex items-center gap-1.5">
@@ -147,13 +152,11 @@ export default function ChatAgent() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f8fafc]" style={{maxHeight: '380px'}}>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f8fafc]">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {m.role === 'assistant' && (
-                  <div className="w-7 h-7 rounded-full overflow-hidden mr-2 shrink-0 mt-1 border border-violet-200">
-                    <img src={SARAH_PIC} alt="Sarah" className="w-full h-full object-cover" />
-                  </div>
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center text-white text-xs font-bold mr-2 shrink-0 mt-1">S</div>
                 )}
                 <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === 'user'
@@ -167,9 +170,7 @@ export default function ChatAgent() {
 
             {loading && (
               <div className="flex justify-start">
-                <div className="w-7 h-7 rounded-full overflow-hidden mr-2 shrink-0 border border-violet-200">
-                  <img src={SARAH_PIC} alt="Sarah" className="w-full h-full object-cover" />
-                </div>
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-violet-600 to-pink-600 flex items-center justify-center text-white text-xs font-bold mr-2 shrink-0">S</div>
                 <div className="bg-white px-4 py-3 rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex gap-1">
                     {[0,1,2].map(i => (
@@ -181,7 +182,7 @@ export default function ChatAgent() {
             )}
 
             {/* Quick Replies */}
-            {!loading && quickReplies.length > 0 && (
+            {quickReplies.length > 0 && (
               <div className="flex flex-wrap gap-2 pl-9">
                 {quickReplies.map((r, i) => (
                   <button key={i} onClick={() => sendMessage(r)}
@@ -195,10 +196,11 @@ export default function ChatAgent() {
             {/* Generate Button */}
             {readyToGenerate && !loading && (
               <div className="flex flex-col gap-2 pl-9">
+                {genError && <p className="text-xs text-red-500 px-1">{genError}</p>}
                 <button onClick={generateItinerary} disabled={generating}
                   className="flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg shadow-violet-200 disabled:opacity-60">
                   {generating ? (
-                    <><span className="animate-spin">⏳</span> Generating...</>
+                    <><span className="animate-spin inline-block">⏳</span> Generating your itinerary...</>
                   ) : (
                     <><Sparkles size={14} /> ✨ Generate My Full Itinerary</>
                   )}
@@ -210,6 +212,7 @@ export default function ChatAgent() {
                   className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-green-600 transition shadow-lg">
                   💬 Share on WhatsApp
                 </button>
+                <p className="text-center text-xs text-gray-400">🎁 First itinerary free · Pro plan from $3/mo</p>
               </div>
             )}
 
@@ -217,12 +220,12 @@ export default function ChatAgent() {
           </div>
 
           {/* Input */}
-          <div className="p-3 bg-white border-t border-gray-100">
+          <div className="p-3 bg-white border-t border-gray-100 shrink-0">
             <div className="flex items-center gap-2">
               <input
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                 placeholder="Type a message..."
                 className="flex-1 px-4 py-2.5 bg-[#f8fafc] border border-gray-200 rounded-xl text-sm text-[#0f172a] placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent" />
               <button onClick={() => sendMessage()} disabled={!input.trim() || loading}

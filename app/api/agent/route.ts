@@ -20,7 +20,7 @@ CONVERSATION FLOW (follow this exact order, ONE question at a time):
 6. Ask interests: "What excites you most - food, history, beaches, nightlife, or spiritual experiences?"
 7. Ask budget per person
 8. Ask if first time visiting
-9. Ask hotel preference
+9. Ask hotel preference: "What's your preferred hotel style - 3-star, 4-star, or 5-star?"
 10. Ask email: "I would love to send you a complete personalized itinerary. What is your email address?"
 11. Ask phone (optional): "And a number for urgent travel updates? Totally optional!"
 12. Show summary + READY_TO_GENERATE
