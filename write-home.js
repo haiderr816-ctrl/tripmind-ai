@@ -1,4 +1,6 @@
-"use client";
+const fs = require('fs');
+
+const content = `"use client";
 
 import { useState, useEffect } from "react";
 import { useAuth, SignInButton } from "@clerk/nextjs";
@@ -31,7 +33,7 @@ export default function Home() {
     <div className="min-h-screen bg-white" style={{fontFamily: "'Plus Jakarta Sans', Inter, sans-serif"}}>
 
       {/* Google Font */}
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');`}</style>
+      <style>{\`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');\`}</style>
 
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
@@ -78,10 +80,10 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="relative h-[680px] flex items-center justify-center text-center overflow-hidden bg-gradient-to-br from-violet-900 to-pink-900">
+      <section className="relative h-[680px] flex items-center justify-center text-center overflow-hidden">
         {slides.map((url, i) => (
           <div key={i} className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
-            style={{ backgroundImage: `url('${url}')`, opacity: slideIndex === i ? 1 : 0 }} />
+            style={{ backgroundImage: \`url('\${url}')\`, opacity: slideIndex === i ? 1 : 0 }} />
         ))}
         <div className="absolute inset-0 bg-black/40" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
@@ -118,7 +120,7 @@ export default function Home() {
               </select>
             </div>
             <button onClick={() => {
-              if (isSignedIn) router.push(`/dashboard/plan?destination=${encodeURIComponent(destination)}&startDate=${startDate}&endDate=${endDate}`);
+              if (isSignedIn) router.push(\`/dashboard/plan?destination=\${encodeURIComponent(destination)}&startDate=\${startDate}&endDate=\${endDate}\`);
               else router.push("/sign-in");
             }} className="w-full bg-gradient-to-r from-violet-600 to-pink-600 text-white py-4 rounded-xl font-bold hover:opacity-90 transition flex items-center justify-center gap-2 text-base shadow-lg shadow-violet-500/30">
               <Sparkles size={18} /> Plan My Trip with AI
@@ -131,7 +133,7 @@ export default function Home() {
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
           {slides.map((_, i) => (
             <button key={i} onClick={() => setSlideIndex(i)}
-              className={`h-1.5 rounded-full transition-all ${slideIndex === i ? "w-8 bg-white" : "w-2 bg-white/40"}`} />
+              className={\`h-1.5 rounded-full transition-all \${slideIndex === i ? "w-8 bg-white" : "w-2 bg-white/40"}\`} />
           ))}
         </div>
       </section>
@@ -426,3 +428,7 @@ export default function Home() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('app/page.tsx', content);
+console.log('Done homepage');

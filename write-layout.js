@@ -1,4 +1,6 @@
-"use client";
+const fs = require('fs');
+
+const content = `"use client";
 
 import { useState } from "react";
 import Link from "next/link";
@@ -27,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
 
-      <aside className={`fixed top-0 left-0 z-40 h-full w-64 bg-white border-r border-gray-100 transform transition-transform duration-200 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 flex flex-col`}>
+      <aside className={\`fixed top-0 left-0 z-40 h-full w-64 bg-white border-r border-gray-100 transform transition-transform duration-200 ease-in-out \${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 flex flex-col\`}>
 
         <div className="p-6 border-b border-gray-100">
           <Link href="/" className="flex items-center gap-2">
@@ -57,7 +59,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             const isActive = pathname === item.href;
             return (
               <Link key={item.href} href={item.href} onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive ? "bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-200" : "text-[#64748b] hover:bg-[#f8fafc] hover:text-[#0f172a]"}`}>
+                className={\`flex items-center gap-3 px-4 py-3 rounded-xl transition-all \${isActive ? "bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-200" : "text-[#64748b] hover:bg-[#f8fafc] hover:text-[#0f172a]"}\`}>
                 <item.icon size={18} />
                 <span className="font-medium text-sm">{item.name}</span>
                 {isActive && <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full" />}
@@ -68,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <div className="mx-4 mb-4 bg-gradient-to-br from-violet-600 to-pink-600 rounded-2xl p-4 text-white">
           <p className="font-bold text-sm mb-1">Upgrade to Pro</p>
-          <p className="text-xs text-white/70 mb-3">Unlimited trips for just $3/month</p>
+          <p className="text-xs text-white/70 mb-3">Unlimited trips for just \$3/month</p>
           <Link href="/dashboard/billing">
             <button className="w-full bg-white text-violet-700 text-xs font-bold py-2 rounded-xl hover:bg-violet-50 transition">
               Upgrade Now ✨
@@ -92,3 +94,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   );
 }
+`;
+
+fs.writeFileSync('app/dashboard/layout.tsx', content);
+console.log('Done layout');

@@ -1,70 +1,39 @@
-'use client';
+const fs = require('fs');
+const content = `'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, MapPin, Calendar, DollarSign, Heart, Loader2, Globe, Plus, X } from 'lucide-react';
+import { Sparkles, MapPin, Calendar, DollarSign, Heart, Loader2 } from 'lucide-react';
 
 export default function PlanPage() {
   const router = useRouter();
-  const [form, setForm] = useState({
-    country: '',
-    cities: [''],
-    startDate: '',
-    endDate: '',
-    budget: 'Medium',
-    interests: ''
-  });
+  const [form, setForm] = useState({ destination: '', startDate: '', endDate: '', budget: 'Medium', interests: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  function addCity() {
-    setForm({ ...form, cities: [...form.cities, ''] });
-  }
-
-  function removeCity(i: number) {
-    const updated = form.cities.filter((_, idx) => idx !== i);
-    setForm({ ...form, cities: updated.length ? updated : [''] });
-  }
-
-  function updateCity(i: number, value: string) {
-    const updated = [...form.cities];
-    updated[i] = value;
-    setForm({ ...form, cities: updated });
-  }
-
   async function handleSubmit() {
-    if (!form.country || !form.startDate || !form.endDate) {
-      setError('Please fill in country and dates.');
+    if (!form.destination || !form.startDate || !form.endDate) {
+      setError('Please fill in destination and dates.');
       return;
     }
-    const filledCities = form.cities.filter(c => c.trim());
-    const destination = filledCities.length > 0
-      ? `${filledCities.join(', ')}, ${form.country}`
-      : form.country;
-
     setLoading(true);
     setError('');
     try {
       const res = await fetch('/api/itinerary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          destination,
-          country: form.country,
-          cities: filledCities,
-          startDate: form.startDate,
-          endDate: form.endDate,
-          budget: form.budget,
-          interests: form.interests
-        })
+        body: JSON.stringify(form)
       });
       const data = await res.json();
+      console.log('API response:', data);
       if (data.tripId) {
         router.push('/dashboard/trips/' + data.tripId);
+      } else if (data.error) {
+        setError(data.error);
       } else {
-        setError(data.error || 'Failed to generate itinerary. Please try again.');
+        setError('Failed to generate itinerary. Please try again.');
       }
-    } catch {
+    } catch (e: any) {
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -88,55 +57,22 @@ export default function PlanPage() {
           <div className="h-1.5 bg-gradient-to-r from-violet-600 to-pink-600" />
           <div className="p-8 space-y-6">
 
-            {/* Country */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
-                <Globe size={15} className="text-violet-500" /> Country
+                <MapPin size={15} className="text-violet-500" /> Destination
               </label>
-              <input type="text" placeholder="e.g. Japan, France, Thailand"
-                value={form.country}
-                onChange={e => setForm({ ...form, country: e.target.value })}
+              <input type="text" placeholder="e.g. Tokyo, Japan" value={form.destination}
+                onChange={e => setForm({...form, destination: e.target.value})}
                 className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-[#0f172a] placeholder-gray-400 transition" />
             </div>
 
-            {/* Cities */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
-                <MapPin size={15} className="text-violet-500" /> Cities to Visit
-                <span className="text-xs text-[#64748b] font-normal">(optional — leave blank for full country plan)</span>
-              </label>
-              <div className="space-y-2">
-                {form.cities.map((city, i) => (
-                  <div key={i} className="flex gap-2">
-                    <input type="text" placeholder={`City ${i + 1} — e.g. Tokyo`}
-                      value={city}
-                      onChange={e => updateCity(i, e.target.value)}
-                      className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-[#0f172a] placeholder-gray-400 transition" />
-                    {form.cities.length > 1 && (
-                      <button onClick={() => removeCity(i)}
-                        className="w-11 h-11 flex items-center justify-center rounded-xl border border-red-100 bg-red-50 text-red-400 hover:bg-red-100 transition">
-                        <X size={16} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {form.cities.length < 5 && (
-                  <button onClick={addCity}
-                    className="flex items-center gap-2 text-sm text-violet-600 font-semibold hover:text-violet-700 transition mt-1">
-                    <Plus size={15} /> Add another city
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Dates */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
                   <Calendar size={15} className="text-violet-500" /> Start Date
                 </label>
                 <input type="date" value={form.startDate}
-                  onChange={e => setForm({ ...form, startDate: e.target.value })}
+                  onChange={e => setForm({...form, startDate: e.target.value})}
                   className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-[#0f172a] transition" />
               </div>
               <div>
@@ -144,34 +80,31 @@ export default function PlanPage() {
                   <Calendar size={15} className="text-violet-500" /> End Date
                 </label>
                 <input type="date" value={form.endDate}
-                  onChange={e => setForm({ ...form, endDate: e.target.value })}
+                  onChange={e => setForm({...form, endDate: e.target.value})}
                   className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-[#0f172a] transition" />
               </div>
             </div>
 
-            {/* Budget */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
                 <DollarSign size={15} className="text-violet-500" /> Budget
               </label>
               <div className="grid grid-cols-3 gap-3">
                 {['Budget', 'Medium', 'Luxury'].map(b => (
-                  <button key={b} onClick={() => setForm({ ...form, budget: b })}
-                    className={`py-3 rounded-xl text-sm font-semibold border-2 transition ${form.budget === b ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-[#64748b] hover:border-violet-200'}`}>
+                  <button key={b} onClick={() => setForm({...form, budget: b})}
+                    className={\`py-3 rounded-xl text-sm font-semibold border-2 transition \${form.budget === b ? 'border-violet-500 bg-violet-50 text-violet-700' : 'border-gray-200 text-[#64748b] hover:border-violet-200'}\`}>
                     {b === 'Budget' ? '💰 Budget' : b === 'Medium' ? '✈️ Medium' : '👑 Luxury'}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Interests */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
                 <Heart size={15} className="text-violet-500" /> Interests
               </label>
-              <input type="text" placeholder="e.g. food, hiking, museums, beaches"
-                value={form.interests}
-                onChange={e => setForm({ ...form, interests: e.target.value })}
+              <input type="text" placeholder="e.g. food, hiking, museums, beaches" value={form.interests}
+                onChange={e => setForm({...form, interests: e.target.value})}
                 className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-[#0f172a] placeholder-gray-400 transition" />
               <p className="text-xs text-[#64748b] mt-2">Separate with commas for better personalization</p>
             </div>
@@ -197,9 +130,9 @@ export default function PlanPage() {
 
         <div className="mt-6 grid grid-cols-3 gap-4">
           {[
-            { emoji: "🌍", title: "Pick a Country", desc: "Start with country, add cities for multi-city trips" },
-            { emoji: "📅", title: "Set Dates", desc: "Exact dates help AI plan city by city" },
-            { emoji: "❤️", title: "Add Interests", desc: "Personalize every day of your trip" },
+            { emoji: "🎯", title: "Be Specific", desc: "Add a city name for better results" },
+            { emoji: "📅", title: "Set Dates", desc: "Exact dates help AI plan better" },
+            { emoji: "❤️", title: "Add Interests", desc: "Personalize your experience" },
           ].map(tip => (
             <div key={tip.title} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
               <div className="text-2xl mb-2">{tip.emoji}</div>
@@ -212,3 +145,6 @@ export default function PlanPage() {
     </div>
   );
 }
+`;
+fs.writeFileSync('app/dashboard/plan/page.tsx', content);
+console.log('Done plan');

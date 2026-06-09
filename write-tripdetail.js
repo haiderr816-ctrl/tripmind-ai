@@ -1,4 +1,7 @@
-'use client';
+const fs = require('fs');
+const path = require('path');
+
+const content = `'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -16,7 +19,7 @@ export default function TripDetailPage() {
 
   useEffect(() => {
     const tripId = Array.isArray(id) ? id[0] : id;
-    fetch(`/api/get-trip?id=${tripId}`)
+    fetch(\`/api/get-trip?id=\${tripId}\`)
       .then(r => r.json())
       .then(data => { setTrip(data.trip || null); setLoading(false); })
       .catch(() => setLoading(false));
@@ -24,7 +27,7 @@ export default function TripDetailPage() {
 
   useEffect(() => {
     if (!trip) return;
-    fetch(`/api/photo?query=${encodeURIComponent(trip.destination + ' city landmark aerial')}`)
+    fetch(\`/api/photo?query=\${encodeURIComponent(trip.destination + ' city landmark aerial')}\`)
       .then(r => r.json()).then(d => { if (d.url) setHeroPhoto(d.url); });
   }, [trip]);
 
@@ -34,7 +37,7 @@ export default function TripDetailPage() {
     const days = itinerary?.days || [];
     days.forEach((day: any, i: number) => {
       const query = day.cityOrArea || day.title || trip.destination;
-      fetch(`/api/photo?query=${encodeURIComponent(query + ' travel')}`)
+      fetch(\`/api/photo?query=\${encodeURIComponent(query + ' travel')}\`)
         .then(r => r.json()).then(d => {
           if (d.url) setDayPhotos(prev => ({ ...prev, [i]: d.url }));
         });
@@ -71,6 +74,7 @@ export default function TripDetailPage() {
     <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
 
+        {/* Back + Download */}
         <div className="flex items-center justify-between mb-6">
           <button onClick={() => router.push('/dashboard/trips')}
             className="flex items-center gap-2 text-[#64748b] hover:text-[#0f172a] font-medium transition group">
@@ -79,6 +83,7 @@ export default function TripDetailPage() {
           <DownloadPDF trip={trip} />
         </div>
 
+        {/* Hero */}
         <div className="relative rounded-3xl overflow-hidden h-64 mb-6 shadow-xl">
           {heroPhoto ? (
             <img src={heroPhoto} alt={trip.destination} className="w-full h-full object-cover" />
@@ -102,6 +107,7 @@ export default function TripDetailPage() {
           </div>
         </div>
 
+        {/* Weather + Country */}
         {(weather || countryInfo) && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             {weather && (
@@ -118,9 +124,9 @@ export default function TripDetailPage() {
             )}
             {countryInfo && (
               <div className="bg-gradient-to-br from-violet-50 to-pink-50 border border-violet-100 rounded-2xl p-4 flex items-center gap-4">
-                <div className="w-12 h-12 bg-violet-100 rounded-2xl flex items-center justify-center shrink-0">
-  <Globe size={22} className="text-violet-500" />
-</div>
+                <div className="w-12 h-12 bg-violet-100 rounded-2xl flex items-center justify-center shrink-0 text-2xl">
+                  {countryInfo.flag || <Globe size={22} className="text-violet-500" />}
+                </div>
                 <div>
                   <p className="font-bold text-[#0f172a] text-sm mb-0.5">Country Info</p>
                   <p className="text-xs text-[#64748b]">Currency: {typeof countryInfo.currency === 'object' ? (countryInfo.currency as any)?.name : countryInfo.currency}</p>
@@ -131,6 +137,7 @@ export default function TripDetailPage() {
           </div>
         )}
 
+        {/* Summary */}
         {itinerary?.summary && (
           <div className="bg-gradient-to-r from-violet-50 to-pink-50 border border-violet-100 rounded-2xl p-5 mb-6">
             <p className="text-[#0f172a] leading-relaxed">{itinerary.summary}</p>
@@ -143,6 +150,7 @@ export default function TripDetailPage() {
           </div>
         )}
 
+        {/* Flight Estimate */}
         {flightEstimate && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
             <div className="flex items-center gap-3 mb-4">
@@ -182,6 +190,7 @@ export default function TripDetailPage() {
           </div>
         )}
 
+        {/* Budget Breakdown */}
         {budgetBreakdown && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
             <div className="flex items-center gap-3 mb-4">
@@ -201,7 +210,7 @@ export default function TripDetailPage() {
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-[#f8fafc] rounded-xl">
                   <span className="text-sm font-medium text-[#0f172a]">{item.label}</span>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-lg ${item.color}`}>{item.value}</span>
+                  <span className={\`text-xs font-bold px-3 py-1 rounded-lg \${item.color}\`}>{item.value}</span>
                 </div>
               ))}
               <div className="flex items-center justify-between p-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl mt-2">
@@ -212,17 +221,19 @@ export default function TripDetailPage() {
           </div>
         )}
 
+        {/* Day Tabs */}
         {days.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-2 mb-6 scrollbar-hide">
             {days.map((day: any, i: number) => (
               <button key={i} onClick={() => setActiveDay(i)}
-                className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition ${activeDay === i ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-200' : 'bg-white text-[#64748b] border border-gray-100 hover:border-violet-200'}`}>
+                className={\`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition \${activeDay === i ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-200' : 'bg-white text-[#64748b] border border-gray-100 hover:border-violet-200'}\`}>
                 Day {day.day}
               </button>
             ))}
           </div>
         )}
 
+        {/* Active Day */}
         {days[activeDay] && (
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
             <div className="relative h-48 overflow-hidden">
@@ -251,6 +262,7 @@ export default function TripDetailPage() {
             <div className="p-6">
               {days[activeDay].date && <p className="text-sm text-[#64748b] mb-4">{days[activeDay].date}</p>}
 
+              {/* Food Estimate for Day */}
               {days[activeDay].foodEstimate && (
                 <div className="bg-orange-50 border border-orange-100 rounded-2xl p-4 mb-5">
                   <div className="flex items-center gap-2 mb-3">
@@ -276,6 +288,7 @@ export default function TripDetailPage() {
                 </div>
               )}
 
+              {/* Transport for Day */}
               {days[activeDay].transportForDay && (
                 <div className="bg-cyan-50 border border-cyan-100 rounded-xl p-3 mb-5 flex items-center gap-3">
                   <Bus size={16} className="text-cyan-600 shrink-0" />
@@ -286,6 +299,7 @@ export default function TripDetailPage() {
                 </div>
               )}
 
+              {/* Schedule */}
               <div className="space-y-3 mb-6">
                 {days[activeDay].schedule?.map((item: any, i: number) => (
                   <div key={i} className="flex gap-4 p-4 bg-[#f8fafc] rounded-2xl hover:bg-violet-50 transition">
@@ -307,6 +321,7 @@ export default function TripDetailPage() {
                 ))}
               </div>
 
+              {/* Accommodation */}
               {days[activeDay].accommodation && (
                 <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-4">
                   <div className="flex items-start gap-3">
@@ -324,6 +339,7 @@ export default function TripDetailPage() {
                 </div>
               )}
 
+              {/* Tips */}
               {days[activeDay].tips && (
                 <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4 flex items-start gap-3">
                   <div className="w-9 h-9 bg-violet-100 rounded-xl flex items-center justify-center shrink-0">
@@ -339,6 +355,7 @@ export default function TripDetailPage() {
           </div>
         )}
 
+        {/* Navigation */}
         <div className="flex justify-between mb-6">
           <button onClick={() => setActiveDay(Math.max(0, activeDay - 1))} disabled={activeDay === 0}
             className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-semibold text-[#64748b] hover:border-violet-200 hover:text-violet-600 disabled:opacity-30 transition shadow-sm">
@@ -350,6 +367,7 @@ export default function TripDetailPage() {
           </button>
         </div>
 
+        {/* Packing Tips */}
         {itinerary?.packingTips?.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
             <h3 className="font-bold text-[#0f172a] mb-3">🎒 Packing Tips</h3>
@@ -361,6 +379,7 @@ export default function TripDetailPage() {
           </div>
         )}
 
+        {/* Money Tips */}
         {moneyTips?.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
             <h3 className="font-bold text-[#0f172a] mb-3">💳 Money Tips</h3>
@@ -374,6 +393,7 @@ export default function TripDetailPage() {
           </div>
         )}
 
+        {/* Emergency Contacts */}
         {emergencyContacts && (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-5 mb-6">
             <div className="flex items-center gap-3 mb-3">
@@ -399,3 +419,9 @@ export default function TripDetailPage() {
     </div>
   );
 }
+`;
+
+const dir = path.join(process.cwd(), 'app', 'dashboard', 'trips', '[id]');
+fs.mkdirSync(dir, { recursive: true });
+fs.writeFileSync(path.join(dir, 'page.tsx'), content);
+console.log('✅ app/dashboard/trips/[id]/page.tsx written');

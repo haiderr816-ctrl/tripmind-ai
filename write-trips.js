@@ -1,4 +1,7 @@
-'use client';
+const fs = require('fs');
+const path = require('path');
+
+const content = `'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,7 +13,7 @@ function TripCard({ trip, onDelete }: { trip: any, onDelete: (id: string) => voi
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`/api/photo?query=${encodeURIComponent(trip.destination + ' city landmark')}`)
+    fetch(\`/api/photo?query=\${encodeURIComponent(trip.destination + ' city landmark')}\`)
       .then(r => r.json())
       .then(d => { if (d.url) setPhoto(d.url); });
   }, [trip.destination]);
@@ -121,3 +124,9 @@ export default function TripsPage() {
     </div>
   );
 }
+`;
+
+const dir = path.join(process.cwd(), 'app', 'dashboard', 'trips');
+fs.mkdirSync(dir, { recursive: true });
+fs.writeFileSync(path.join(dir, 'page.tsx'), content);
+console.log('✅ app/dashboard/trips/page.tsx written');

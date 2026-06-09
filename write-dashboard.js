@@ -1,7 +1,9 @@
-"use client";
+const fs = require('fs');
+
+const content = `"use client";
 
 import { useUser } from "@clerk/nextjs";
-import { Calendar, MapPin, Sparkles, ArrowRight, DollarSign, Clock, Zap, Star, Bell, ChevronRight, Plane, Hotel, Camera } from "lucide-react";
+import { Calendar, MapPin, Sparkles, ArrowRight, TrendingUp, DollarSign, Clock, Zap, Star, Bell, ChevronRight, Plane, Hotel, Coffee, Camera } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -10,7 +12,6 @@ export default function DashboardPage() {
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
-  const [heroPhoto, setHeroPhoto] = useState('');
 
   useEffect(() => {
     fetch("/api/get-trips")
@@ -22,31 +23,10 @@ export default function DashboardPage() {
 
   const upcomingTrip = trips[0];
 
-  useEffect(() => {
-    if (!upcomingTrip) return;
-    fetch(`/api/photo?query=${encodeURIComponent(upcomingTrip.destination + ' city landmark')}`)
-      .then(r => r.json()).then(d => { if (d.url) setHeroPhoto(d.url); });
-  }, [upcomingTrip?.id]);
-
-  const uniqueCountries = trips.length === 0 ? 0 : new Set(trips.map(t => {
-    const parts = t.destination.split(',');
-    return (parts[parts.length - 1] || parts[0]).trim().toLowerCase();
-  })).size;
-
-  const totalEstimated = trips.reduce((sum, t) => {
-    try {
-      const itin = typeof t.itinerary === 'string' ? JSON.parse(t.itinerary) : t.itinerary;
-      const raw = itin?.budgetBreakdown?.total || itin?.totalEstimatedCost || '';
-      const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
-      return sum + (isNaN(num) ? 0 : num);
-    } catch { return sum; }
-  }, 0);
-
-  const savedAmount = totalEstimated > 0 ? `$${Math.round(totalEstimated * 0.15).toLocaleString()}` : '$0';
-
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
 
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <div className="flex items-center gap-3 mb-1">
@@ -74,10 +54,11 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Tabs */}
       <div className="flex gap-1 bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 w-fit mb-8">
         {["overview", "analytics", "timeline"].map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`px-5 py-2 rounded-xl text-sm font-semibold transition capitalize ${activeTab === tab ? "bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md" : "text-[#64748b] hover:text-[#0f172a]"}`}>
+            className={\`px-5 py-2 rounded-xl text-sm font-semibold transition capitalize \${activeTab === tab ? "bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md" : "text-[#64748b] hover:text-[#0f172a]"}\`}>
             {tab}
           </button>
         ))}
@@ -86,18 +67,19 @@ export default function DashboardPage() {
       {activeTab === "overview" && (
         <div className="space-y-6">
 
+          {/* Stats Row */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: "Trips Planned", value: trips.length.toString(), icon: MapPin, color: "violet", change: trips.length > 0 ? `+${Math.min(trips.length, 2)} this month` : "Plan your first trip" },
-              { label: "Countries", value: uniqueCountries.toString(), icon: Plane, color: "pink", change: uniqueCountries > 0 ? `${uniqueCountries} explored` : "Explore more" },
-              { label: "AI Score", value: trips.length > 0 ? "98" : "0", icon: Sparkles, color: "purple", change: "Excellent" },
-              { label: "AI Savings", value: savedAmount, icon: DollarSign, color: "green", change: "Est. 15% saved with AI tips" },
+              { label: "Trips Planned", value: trips.length.toString(), icon: MapPin, color: "violet", change: "+2 this month" },
+              { label: "Countries", value: "0", icon: Plane, color: "pink", change: "Explore more" },
+              { label: "AI Score", value: "98", icon: Sparkles, color: "purple", change: "Excellent" },
+              { label: "Saved", value: "$0", icon: DollarSign, color: "green", change: "With AI tips" },
             ].map((stat) => (
               <div key={stat.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[#64748b] text-sm font-medium">{stat.label}</span>
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${stat.color === "violet" ? "bg-violet-50" : stat.color === "pink" ? "bg-pink-50" : stat.color === "purple" ? "bg-purple-50" : "bg-green-50"}`}>
-                    <stat.icon size={18} className={`${stat.color === "violet" ? "text-violet-600" : stat.color === "pink" ? "text-pink-600" : stat.color === "purple" ? "text-purple-600" : "text-green-600"}`} />
+                  <div className={\`w-9 h-9 rounded-xl flex items-center justify-center \${stat.color === "violet" ? "bg-violet-50" : stat.color === "pink" ? "bg-pink-50" : stat.color === "purple" ? "bg-purple-50" : "bg-green-50"}\`}>
+                    <stat.icon size={18} className={\`\${stat.color === "violet" ? "text-violet-600" : stat.color === "pink" ? "text-pink-600" : stat.color === "purple" ? "text-purple-600" : "text-green-600"}\`} />
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-[#0f172a] mb-1">{stat.value}</div>
@@ -107,20 +89,19 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Upcoming Trip Hero Card */}
             <div className="lg:col-span-2">
               {upcomingTrip ? (
                 <div className="relative rounded-3xl overflow-hidden h-72 shadow-xl">
-                  {heroPhoto ? (
-                    <img src={heroPhoto} alt={upcomingTrip.destination} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-violet-400 to-pink-400 animate-pulse" />
-                  )}
+                  <img src="https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=2670"
+                    alt={upcomingTrip.destination} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl px-4 py-2 text-white text-sm font-semibold">
                     Next Trip
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <h3 className="text-2xl font-bold text-white mb-1 capitalize">{upcomingTrip.destination}</h3>
+                    <h3 className="text-2xl font-bold text-white mb-1">{upcomingTrip.destination}</h3>
                     <p className="text-white/80 text-sm mb-4">{upcomingTrip.startDate} → {upcomingTrip.endDate}</p>
                     <div className="flex items-center gap-3">
                       <div className="bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl px-3 py-1.5 text-white text-xs font-medium flex items-center gap-1.5">
@@ -148,6 +129,7 @@ export default function DashboardPage() {
               )}
             </div>
 
+            {/* AI Optimizer Widget */}
             <div className="bg-gradient-to-br from-violet-600 to-pink-600 rounded-3xl p-6 text-white shadow-xl shadow-violet-200 flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-4">
@@ -179,20 +161,21 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { href: "/dashboard/plan", icon: Calendar, bg: "bg-violet-50", title: "Plan a New Trip", desc: "AI-powered itinerary in 30 seconds", cta: "Start planning", ctaColor: "text-violet-600" },
-              { href: "/dashboard/trips", icon: MapPin, bg: "bg-pink-50", title: "My Trips", desc: `${trips.length} saved itineraries`, cta: "View all", ctaColor: "text-pink-600" },
-              { href: "/dashboard/billing", icon: Star, bg: "bg-purple-50", title: "Upgrade to Pro", desc: "Unlimited trips for just $3/month", cta: "Upgrade now", ctaColor: "text-purple-600" },
+              { href: "/dashboard/plan", icon: Calendar, color: "violet", bg: "bg-violet-50", title: "Plan a New Trip", desc: "AI-powered itinerary in 30 seconds", cta: "Start planning", ctaColor: "text-violet-600" },
+              { href: "/dashboard/trips", icon: MapPin, color: "pink", bg: "bg-pink-50", title: "My Trips", desc: "View all your saved itineraries", cta: "View all", ctaColor: "text-pink-600" },
+              { href: "/dashboard/billing", icon: Star, color: "purple", bg: "bg-purple-50", title: "Upgrade to Pro", desc: "Unlimited trips for just $3/month", cta: "Upgrade now", ctaColor: "text-purple-600" },
             ].map((card) => (
               <Link href={card.href} key={card.title}>
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer group hover:border-violet-100">
-                  <div className={`w-11 h-11 ${card.bg} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition`}>
+                  <div className={\`w-11 h-11 \${card.bg} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition\`}>
                     <card.icon size={20} className={card.ctaColor} />
                   </div>
                   <h3 className="font-bold text-[#0f172a] mb-1">{card.title}</h3>
                   <p className="text-sm text-[#64748b] mb-3">{card.desc}</p>
-                  <div className={`flex items-center gap-1 text-sm font-semibold ${card.ctaColor}`}>
+                  <div className={\`flex items-center gap-1 text-sm font-semibold \${card.ctaColor}\`}>
                     {card.cta} <ArrowRight size={14} />
                   </div>
                 </div>
@@ -200,6 +183,7 @@ export default function DashboardPage() {
             ))}
           </div>
 
+          {/* Recent Trips */}
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-5">
               <h2 className="font-bold text-[#0f172a] text-lg">Recent Trips</h2>
@@ -213,6 +197,9 @@ export default function DashboardPage() {
               </div>
             ) : trips.length === 0 ? (
               <div className="text-center py-10">
+                <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <MapPin size={28} className="text-violet-400" />
+                </div>
                 <p className="text-[#64748b] mb-4">No trips yet. Start planning your first adventure!</p>
                 <Link href="/dashboard/plan">
                   <button className="bg-gradient-to-r from-violet-600 to-pink-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:opacity-90 transition shadow-lg shadow-violet-200">
@@ -230,12 +217,12 @@ export default function DashboardPage() {
                           <MapPin size={16} className="text-white" />
                         </div>
                         <div>
-                          <p className="font-semibold text-[#0f172a] capitalize">{trip.destination}</p>
+                          <p className="font-semibold text-[#0f172a]">{trip.destination}</p>
                           <p className="text-xs text-[#64748b]">{trip.startDate} → {trip.endDate}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full font-medium capitalize">{trip.budget}</span>
+                        <span className="text-xs bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full font-medium">{trip.budget}</span>
                         <ChevronRight size={16} className="text-gray-400 group-hover:text-violet-600 transition" />
                       </div>
                     </div>
@@ -250,28 +237,50 @@ export default function DashboardPage() {
       {activeTab === "analytics" && (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Budget Overview */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <h3 className="font-bold text-[#0f172a] mb-1">Trip Statistics</h3>
-              <p className="text-sm text-[#64748b] mb-6">Your travel activity overview</p>
-              <div className="space-y-4">
+              <h3 className="font-bold text-[#0f172a] mb-1">Budget Overview</h3>
+              <p className="text-sm text-[#64748b] mb-6">Track your travel spending</p>
+              <div className="flex items-center justify-center mb-6">
+                <div className="relative w-40 h-40">
+                  <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#f1f5f9" strokeWidth="12" />
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="url(#grad)" strokeWidth="12"
+                      strokeDasharray="160 251" strokeLinecap="round" />
+                    <defs>
+                      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#7c3aed" />
+                        <stop offset="100%" stopColor="#db2777" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-[#0f172a]">64%</span>
+                    <span className="text-xs text-[#64748b]">used</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-3">
                 {[
-                  { label: "Total Trips", value: trips.length, color: "bg-violet-500", max: Math.max(trips.length, 10) },
-                  { label: "Countries Visited", value: uniqueCountries, color: "bg-pink-500", max: Math.max(uniqueCountries, 10) },
-                  { label: "Budget Trips", value: trips.filter(t => t.budget?.toLowerCase() === 'budget').length, color: "bg-green-500", max: Math.max(trips.length, 1) },
-                  { label: "Luxury Trips", value: trips.filter(t => t.budget?.toLowerCase() === 'luxury').length, color: "bg-amber-500", max: Math.max(trips.length, 1) },
+                  { label: "Flights", amount: "$840", pct: 40, color: "bg-violet-500" },
+                  { label: "Hotels", amount: "$520", pct: 25, color: "bg-pink-500" },
+                  { label: "Activities", amount: "$290", pct: 14, color: "bg-purple-400" },
+                  { label: "Remaining", amount: "$650", pct: 21, color: "bg-gray-200" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 rounded-full ${item.color}`} />
+                    <div className={\`w-2.5 h-2.5 rounded-full \${item.color}\`} />
                     <span className="text-sm text-[#64748b] flex-1">{item.label}</span>
                     <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-full ${item.color} rounded-full`} style={{width: Math.round((item.value / item.max) * 100) + "%"}} />
+                      <div className={\`h-full \${item.color} rounded-full\`} style={{width: item.pct + "%"}} />
                     </div>
-                    <span className="text-sm font-bold text-[#0f172a] w-6 text-right">{item.value}</span>
+                    <span className="text-sm font-semibold text-[#0f172a] w-12 text-right">{item.amount}</span>
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* Price Forecast */}
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="font-bold text-[#0f172a] mb-1">Price Forecast</h3>
               <p className="text-sm text-[#64748b] mb-6">Best time to book your next trip</p>
@@ -299,6 +308,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
+          {/* AI Insights */}
           <div className="bg-gradient-to-br from-violet-600 to-pink-600 rounded-2xl p-6 text-white">
             <div className="flex items-center gap-2 mb-4">
               <Zap size={20} />
@@ -308,7 +318,7 @@ export default function DashboardPage() {
               {[
                 { title: "Best Booking Window", value: "6-8 weeks", desc: "Before departure for flights", icon: "⏰" },
                 { title: "Avg. Savings", value: "23%", desc: "With AI-optimized bookings", icon: "💰" },
-                { title: "Trips Planned", value: trips.length.toString(), desc: "Keep exploring the world!", icon: "🌍" },
+                { title: "Top Destination", value: "Bali", desc: "Based on your preferences", icon: "🌴" },
               ].map((insight) => (
                 <div key={insight.title} className="bg-white/15 backdrop-blur-sm rounded-xl p-4 border border-white/20">
                   <div className="text-2xl mb-2">{insight.icon}</div>
@@ -327,6 +337,9 @@ export default function DashboardPage() {
           <h3 className="font-bold text-[#0f172a] text-lg mb-6">Journey Timeline</h3>
           {trips.length === 0 ? (
             <div className="text-center py-16">
+              <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Clock size={28} className="text-violet-400" />
+              </div>
               <p className="text-[#64748b] mb-4">No journey timeline yet. Plan your first trip!</p>
               <Link href="/dashboard/plan">
                 <button className="bg-gradient-to-r from-violet-600 to-pink-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:opacity-90 transition">
@@ -346,10 +359,10 @@ export default function DashboardPage() {
                     <div className="flex-1 bg-[#f8fafc] rounded-2xl p-4 border border-gray-100 hover:border-violet-200 transition">
                       <div className="flex items-start justify-between">
                         <div>
-                          <h4 className="font-bold text-[#0f172a] capitalize">{trip.destination}</h4>
+                          <h4 className="font-bold text-[#0f172a]">{trip.destination}</h4>
                           <p className="text-sm text-[#64748b]">{trip.startDate} → {trip.endDate}</p>
                         </div>
-                        <span className="text-xs bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full font-medium capitalize">{trip.budget}</span>
+                        <span className="text-xs bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full font-medium">{trip.budget}</span>
                       </div>
                       <Link href={"/dashboard/trips/" + trip.id}>
                         <button className="mt-3 text-xs text-violet-600 font-semibold flex items-center gap-1 hover:gap-2 transition-all">
@@ -368,3 +381,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('app/dashboard/page.tsx', content);
+console.log('Done');

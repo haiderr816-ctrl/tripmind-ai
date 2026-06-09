@@ -1,4 +1,5 @@
-'use client';
+const fs = require('fs');
+const content = `'use client';
 
 import { useState } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -150,3 +151,6 @@ export default function BillingPage() {
     </div>
   );
 }
+`;
+fs.writeFileSync('app/dashboard/billing/page.tsx', content);
+console.log('Done billing');
