@@ -39,12 +39,13 @@ Then on a new line add: READY_TO_GENERATE
 
 LEAD EXTRACTION - CRITICAL:
 At the END of EVERY single response, append this on a new line:
-LEAD_DATA:{"name":"","email":"","phone":"","destination":"","dates":"","travelers":"","budget":"","interests":""}
+LEAD_DATA:{"name":"","email":"","phone":"","destination":"","startDate":"","endDate":"","travelers":"","budget":"","interests":""}
 
 Rules for LEAD_DATA:
 - Fill ALL fields you know so far from the ENTIRE conversation, not just this message
 - destination format: "City1, City2, Country"
-- dates format: "July 10 to August 10"
+- startDate: just the start date like "July 10"
+- endDate: just the end date like "August 10"
 - budget: use the raw value like "$1000-3000"
 - Only leave empty string for fields truly not yet collected
 - NEVER skip this line`;
@@ -73,25 +74,25 @@ export async function POST(req: NextRequest) {
     const data = await res.json();
     let reply = data.choices?.[0]?.message?.content || "Sorry, could you repeat that?";
 
-    // Extract LEAD_DATA
+    // Extract LEAD_DATA — use a safer regex that handles spaces in values
     let extractedLead: any = {};
-    const leadMatch = reply.match(/LEAD_DATA:(\{[^}]+\})/);
+    const leadMatch = reply.match(/LEAD_DATA:(\{.*?\})\s*$/ms);
     if (leadMatch) {
       try { extractedLead = JSON.parse(leadMatch[1]); } catch (e) {}
-      reply = reply.replace(/\nLEAD_DATA:\{[^}]+\}/, '').trim();
+      reply = reply.replace(/\nLEAD_DATA:\{.*?\}\s*$/ms, '').trim();
     }
 
     // Check ready to generate
     const readyToGenerate = reply.includes('READY_TO_GENERATE');
     reply = reply.replace('READY_TO_GENERATE', '').trim();
 
-    // Merge lead data
+    // Merge lead data — never overwrite existing values with empty
     const mergedLead: any = { ...leadData };
     for (const [k, v] of Object.entries(extractedLead)) {
       if (v && v !== '') mergedLead[k] = v;
     }
 
-    // Save lead — use relative URL so it works on both local and Vercel
+    // Save lead
     if (mergedLead.email) {
       try {
         const baseUrl = req.headers.get('origin') || req.nextUrl.origin;

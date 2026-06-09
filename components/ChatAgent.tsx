@@ -100,9 +100,9 @@ export default function ChatAgent() {
     setGenError('');
     try {
       const destRaw = lead.destination || '';
-      const dateParts = (lead.dates || '').split(' to ');
-      const startDate = dateParts[0]?.trim() || '';
-      const endDate = dateParts[1]?.trim() || '';
+      // Use separate startDate/endDate fields from new agent, fallback to splitting dates
+      const startDate = lead.startDate || (lead.dates || '').split(' to ')[0]?.trim() || '';
+      const endDate = lead.endDate || (lead.dates || '').split(' to ')[1]?.trim() || '';
 
       const params = new URLSearchParams({
         destination: destRaw,
@@ -233,7 +233,7 @@ export default function ChatAgent() {
                   )}
                 </button>
                 <button onClick={() => {
-                  const text = `Hey! I need help planning a trip to ${leadData.destination} from ${leadData.dates}. Budget: ${leadData.budget}. Interests: ${leadData.interests}`;
+                  const text = `Hey! I need help planning a trip to ${leadData.destination} from ${leadData.startDate} to ${leadData.endDate}. Budget: ${leadData.budget}. Interests: ${leadData.interests}`;
                   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                 }}
                   className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-green-600 transition shadow-lg">

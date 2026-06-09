@@ -4,7 +4,8 @@ import { prisma } from '@/lib/prisma';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, email, phone, destination, dates, travelers, budget, interests } = body;
+    const { name, email, phone, destination, dates, startDate, endDate, travelers, budget, interests } = body;
+const resolvedDates = dates || (startDate && endDate ? `${startDate} to ${endDate}` : startDate || '');
 
     if (!email) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 });
