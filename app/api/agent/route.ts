@@ -43,7 +43,7 @@ LEAD_DATA:{"name":"","email":"","phone":"","destination":"","dates":"","traveler
 
 Rules for LEAD_DATA:
 - Fill ALL fields you know so far from the ENTIRE conversation, not just this message
-- destination format: "City1, City2, Country" 
+- destination format: "City1, City2, Country"
 - dates format: "July 10 to August 10"
 - budget: use the raw value like "$1000-3000"
 - Only leave empty string for fields truly not yet collected
@@ -77,9 +77,7 @@ export async function POST(req: NextRequest) {
     let extractedLead: any = {};
     const leadMatch = reply.match(/LEAD_DATA:(\{[^}]+\})/);
     if (leadMatch) {
-      try {
-        extractedLead = JSON.parse(leadMatch[1]);
-      } catch (e) {}
+      try { extractedLead = JSON.parse(leadMatch[1]); } catch (e) {}
       reply = reply.replace(/\nLEAD_DATA:\{[^}]+\}/, '').trim();
     }
 
@@ -87,22 +85,24 @@ export async function POST(req: NextRequest) {
     const readyToGenerate = reply.includes('READY_TO_GENERATE');
     reply = reply.replace('READY_TO_GENERATE', '').trim();
 
-    // Merge — incoming leadData wins for already-set fields, extracted fills new ones
+    // Merge lead data
     const mergedLead: any = { ...leadData };
     for (const [k, v] of Object.entries(extractedLead)) {
       if (v && v !== '') mergedLead[k] = v;
     }
 
-    // Save lead if email exists
+    // Save lead — use relative URL so it works on both local and Vercel
     if (mergedLead.email) {
       try {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://tripmind-8or5quact-haider-ali-khan-s-projects.vercel.app';
-        await fetch(`${appUrl}/api/save-lead`, {
+        const baseUrl = req.headers.get('origin') || req.nextUrl.origin;
+        await fetch(`${baseUrl}/api/save-lead`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(mergedLead)
         });
-      } catch (e) {}
+      } catch (e) {
+        console.error('Save lead failed:', e);
+      }
     }
 
     return NextResponse.json({ reply, leadData: mergedLead, readyToGenerate });
