@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Send, Sparkles } from 'lucide-react';
+import { X, Send, Sparkles, LogIn } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useUser, SignInButton } from '@clerk/nextjs';
 
 const QUICK_REPLIES: Record<string, string[]> = {
   destination: ['Europe 🇪🇺', 'Asia 🌏', 'Americas 🌎', 'Middle East 🕌'],
@@ -16,18 +17,21 @@ const QUICK_REPLIES: Record<string, string[]> = {
 
 function getQuickReplies(message: string): string[] {
   const m = message.toLowerCase();
-  if (m.includes('where') || m.includes('dreaming of') || m.includes('traveling to') || m.includes('country')) return QUICK_REPLIES.destination;
-  if (m.includes('solo') || m.includes('flying') || m.includes('bringing') || m.includes('someone special')) return QUICK_REPLIES.travelers;
+  if (m.includes('dreaming of') || m.includes('country') || m.includes('traveling to')) return QUICK_REPLIES.destination;
+  if (m.includes('solo') || m.includes('flying') || m.includes('someone special')) return QUICK_REPLIES.travelers;
   if (m.includes('luxury-and-relax') || m.includes('adventure-and-explore') || m.includes('relax person')) return QUICK_REPLIES.style;
-  if (m.includes('excites') || m.includes('spiritual') || m.includes('nightlife') || m.includes('what excites')) return QUICK_REPLIES.interests;
+  if (m.includes('excites') || m.includes('spiritual') || m.includes('what excites')) return QUICK_REPLIES.interests;
   if (m.includes('budget per person') || m.includes('rough budget') || m.includes('estimated budget')) return QUICK_REPLIES.budget;
   if (m.includes('first time') || m.includes('been before') || m.includes('visited')) return QUICK_REPLIES.firsttime;
-  if (m.includes('hotel style') || m.includes('3-star') || m.includes('4-star') || m.includes('5-star') || m.includes('boutique') || m.includes('preferred hotel')) return QUICK_REPLIES.hotel;
+  if (m.includes('hotel style') || m.includes('3-star') || m.includes('4-star') || m.includes('5-star') || m.includes('preferred hotel')) return QUICK_REPLIES.hotel;
   return [];
 }
 
+const STORAGE_KEY = 'tripmind_pending_lead';
+
 export default function ChatAgent() {
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', content: "Hi! I'm Sarah, your personal travel manager at TripMind AI 👋\n\nI'm so excited to help plan your trip. Which country are you dreaming of visiting?" }
@@ -39,6 +43,28 @@ export default function ChatAgent() {
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // On mount: if user just logged in and there's a pending lead, auto-generate
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const pending = localStorage.getItem(STORAGE_KEY);
+    if (!pending) return;
+    try {
+      const saved = JSON.parse(pending);
+      localStorage.removeItem(STORAGE_KEY);
+      // Auto-trigger generation with saved lead data
+      setLeadData(saved.leadData);
+      setMessages(saved.messages);
+      setReadyToGenerate(true);
+      setOpen(true);
+      // Small delay so UI renders first
+      setTimeout(() => {
+        doGenerate(saved.leadData);
+      }, 800);
+    } catch (e) {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [isSignedIn]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -70,58 +96,66 @@ export default function ChatAgent() {
     }
   }
 
-  async function generateItinerary() {
+  async function doGenerate(lead: any) {
     setGenerating(true);
     setGenError('');
-
     try {
-      // Parse destination into cities + country
-      const destRaw = leadData.destination || '';
+      const destRaw = lead.destination || '';
       const parts = destRaw.split(',').map((s: string) => s.trim()).filter(Boolean);
       const country = parts[parts.length - 1] || destRaw;
       const cities = parts.length > 1 ? parts.slice(0, -1) : [];
-
-      // Parse dates
-      const datesRaw = leadData.dates || '';
-      const dateParts = datesRaw.split(' to ');
+      const dateParts = (lead.dates || '').split(' to ');
       const startDate = dateParts[0]?.trim() || '';
       const endDate = dateParts[1]?.trim() || '';
-
-      const payload = {
-        destination: destRaw,
-        country,
-        cities,
-        startDate,
-        endDate,
-        budget: leadData.budget || 'Medium',
-        interests: leadData.interests || '',
-      };
 
       const res = await fetch('/api/itinerary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          destination: destRaw,
+          country,
+          cities,
+          startDate,
+          endDate,
+          budget: lead.budget || 'Medium',
+          interests: lead.interests || '',
+        })
       });
-
       const data = await res.json();
-
       if (data.tripId) {
         setOpen(false);
         router.push('/dashboard/trips/' + data.tripId);
       } else {
         setGenError(data.error || 'Something went wrong. Please try again.');
-        setMessages(prev => [...prev, { role: 'assistant', content: "Hmm, I couldn't generate that itinerary. Please try the Plan page directly!" }]);
       }
-    } catch (e: any) {
+    } catch {
       setGenError('Network error. Please try again.');
-      setMessages(prev => [...prev, { role: 'assistant', content: "Sorry! Connection issue. Please try again." }]);
     } finally {
       setGenerating(false);
     }
   }
 
+  function handleGenerate() {
+    if (isSignedIn) {
+      doGenerate(leadData);
+    } else {
+      // Save everything to localStorage so we can resume after login
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ leadData, messages }));
+      } catch (e) {}
+      // Show login prompt message in chat
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "Almost there! 🎉\n\nJust sign in quickly and I'll instantly generate your full itinerary — no need to start over, your trip details are saved!"
+      }]);
+    }
+  }
+
   const lastMessage = messages[messages.length - 1];
   const quickReplies = lastMessage?.role === 'assistant' && !loading ? getQuickReplies(lastMessage.content) : [];
+
+  // Show login button if not signed in and last message is the "sign in" prompt
+  const showLoginPrompt = !isSignedIn && lastMessage?.content?.includes('Just sign in quickly');
 
   return (
     <>
@@ -182,7 +216,7 @@ export default function ChatAgent() {
             )}
 
             {/* Quick Replies */}
-            {quickReplies.length > 0 && (
+            {quickReplies.length > 0 && !showLoginPrompt && (
               <div className="flex flex-wrap gap-2 pl-9">
                 {quickReplies.map((r, i) => (
                   <button key={i} onClick={() => sendMessage(r)}
@@ -193,11 +227,23 @@ export default function ChatAgent() {
               </div>
             )}
 
-            {/* Generate Button */}
-            {readyToGenerate && !loading && (
+            {/* Login prompt */}
+            {showLoginPrompt && (
+              <div className="pl-9">
+                <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                  <button className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg shadow-violet-200">
+                    <LogIn size={15} /> Sign In & Generate Itinerary ✨
+                  </button>
+                </SignInButton>
+                <p className="text-center text-xs text-gray-400 mt-2">Free to sign in · Your trip details are saved</p>
+              </div>
+            )}
+
+            {/* Generate Button (only shown when signed in) */}
+            {readyToGenerate && !loading && isSignedIn && (
               <div className="flex flex-col gap-2 pl-9">
                 {genError && <p className="text-xs text-red-500 px-1">{genError}</p>}
-                <button onClick={generateItinerary} disabled={generating}
+                <button onClick={handleGenerate} disabled={generating}
                   className="flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg shadow-violet-200 disabled:opacity-60">
                   {generating ? (
                     <><span className="animate-spin inline-block">⏳</span> Generating your itinerary...</>
@@ -211,6 +257,17 @@ export default function ChatAgent() {
                 }}
                   className="flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:bg-green-600 transition shadow-lg">
                   💬 Share on WhatsApp
+                </button>
+                <p className="text-center text-xs text-gray-400">🎁 First itinerary free · Pro plan from $3/mo</p>
+              </div>
+            )}
+
+            {/* Generate button for not-signed-in users (before they click) */}
+            {readyToGenerate && !loading && !isSignedIn && !showLoginPrompt && (
+              <div className="flex flex-col gap-2 pl-9">
+                <button onClick={handleGenerate}
+                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg shadow-violet-200">
+                  <Sparkles size={14} /> ✨ Generate My Full Itinerary
                 </button>
                 <p className="text-center text-xs text-gray-400">🎁 First itinerary free · Pro plan from $3/mo</p>
               </div>
