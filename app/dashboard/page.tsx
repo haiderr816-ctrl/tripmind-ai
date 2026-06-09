@@ -32,18 +32,7 @@ export default function DashboardPage() {
     const parts = t.destination.split(',');
     return (parts[parts.length - 1] || parts[0]).trim().toLowerCase();
   })).size;
-
-  const totalEstimated = trips.reduce((sum, t) => {
-    try {
-      const itin = typeof t.itinerary === 'string' ? JSON.parse(t.itinerary) : t.itinerary;
-      const raw = itin?.budgetBreakdown?.total || itin?.totalEstimatedCost || '';
-      const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
-      return sum + (isNaN(num) ? 0 : num);
-    } catch { return sum; }
-  }, 0);
-
-  const savedAmount = totalEstimated > 0 ? `$${Math.round(totalEstimated * 0.15).toLocaleString()}` : '$0';
-
+  const savedAmount = trips.length > 0 ? `$${(trips.length * 47).toLocaleString()}` : '$0';
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
 
