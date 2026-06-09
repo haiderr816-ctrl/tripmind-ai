@@ -1,25 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, MapPin, Calendar, DollarSign, Heart, Loader2, Globe, Plus, X } from 'lucide-react';
 
 function parseDateString(raw: string): string {
   if (!raw) return '';
-  // Already in YYYY-MM-DD format
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  // Try to parse natural language like "July 10" or "Aug 10"
   try {
     const currentYear = new Date().getFullYear();
     const d = new Date(`${raw} ${currentYear}`);
-    if (!isNaN(d.getTime())) {
-      return d.toISOString().split('T')[0];
-    }
+    if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
   } catch {}
   return '';
 }
 
-export default function PlanPage() {
+function PlanForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [form, setForm] = useState({
@@ -34,7 +30,6 @@ export default function PlanPage() {
   const [error, setError] = useState('');
   const [autoSubmitting, setAutoSubmitting] = useState(false);
 
-  // Read URL params from chat agent and auto-fill + auto-submit
   useEffect(() => {
     const destination = searchParams.get('destination');
     const startDate = searchParams.get('startDate');
@@ -44,7 +39,6 @@ export default function PlanPage() {
 
     if (!destination) return;
 
-    // Parse destination into cities + country
     const parts = destination.split(',').map(s => s.trim()).filter(Boolean);
     const country = parts[parts.length - 1] || destination;
     const cities = parts.length > 1 ? parts.slice(0, -1) : [''];
@@ -52,33 +46,26 @@ export default function PlanPage() {
     const parsedStart = parseDateString(startDate || '');
     const parsedEnd = parseDateString(endDate || '');
 
-    // Map budget string to our format
     let mappedBudget = 'Medium';
     const b = (budget || '').toLowerCase();
     if (b.includes('budget') || b.includes('500')) mappedBudget = 'Budget';
     else if (b.includes('luxury') || b.includes('3000')) mappedBudget = 'Luxury';
-    else mappedBudget = 'Medium';
 
-    const newForm = {
+    setForm({
       country,
       cities: cities.length > 0 ? cities : [''],
       startDate: parsedStart,
       endDate: parsedEnd,
       budget: mappedBudget,
       interests: interests || ''
-    };
+    });
 
-    setForm(newForm);
-
-    // Auto-submit if we have all required fields
     if (destination && parsedStart && parsedEnd) {
       setAutoSubmitting(true);
       setLoading(true);
 
       const filledCities = cities.filter(c => c.trim());
-      const dest = filledCities.length > 0
-        ? `${filledCities.join(', ')}, ${country}`
-        : country;
+      const dest = filledCities.length > 0 ? `${filledCities.join(', ')}, ${country}` : country;
 
       fetch('/api/itinerary', {
         method: 'POST',
@@ -178,7 +165,6 @@ export default function PlanPage() {
           <p className="text-[#64748b]">Tell TripMind AI where you want to go — get a full itinerary in 30 seconds.</p>
         </div>
 
-        {/* Auto-generating banner */}
         {autoSubmitting && (
           <div className="mb-6 bg-gradient-to-r from-violet-600 to-pink-600 rounded-2xl p-4 flex items-center gap-3 text-white shadow-lg shadow-violet-200">
             <Loader2 size={20} className="animate-spin shrink-0" />
@@ -310,5 +296,20 @@ export default function PlanPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PlanPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
+        <div className="flex items-center gap-3 text-violet-600">
+          <Loader2 size={24} className="animate-spin" />
+          <span className="font-semibold">Loading...</span>
+        </div>
+      </div>
+    }>
+      <PlanForm />
+    </Suspense>
   );
 }
