@@ -1,11 +1,27 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Sparkles, MapPin, Calendar, DollarSign, Heart, Loader2, Globe, Plus, X } from 'lucide-react';
+
+function parseDateString(raw: string): string {
+  if (!raw) return '';
+  // Already in YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  // Try to parse natural language like "July 10" or "Aug 10"
+  try {
+    const currentYear = new Date().getFullYear();
+    const d = new Date(`${raw} ${currentYear}`);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().split('T')[0];
+    }
+  } catch {}
+  return '';
+}
 
 export default function PlanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState({
     country: '',
     cities: [''],
@@ -16,6 +32,84 @@ export default function PlanPage() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [autoSubmitting, setAutoSubmitting] = useState(false);
+
+  // Read URL params from chat agent and auto-fill + auto-submit
+  useEffect(() => {
+    const destination = searchParams.get('destination');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const budget = searchParams.get('budget');
+    const interests = searchParams.get('interests');
+
+    if (!destination) return;
+
+    // Parse destination into cities + country
+    const parts = destination.split(',').map(s => s.trim()).filter(Boolean);
+    const country = parts[parts.length - 1] || destination;
+    const cities = parts.length > 1 ? parts.slice(0, -1) : [''];
+
+    const parsedStart = parseDateString(startDate || '');
+    const parsedEnd = parseDateString(endDate || '');
+
+    // Map budget string to our format
+    let mappedBudget = 'Medium';
+    const b = (budget || '').toLowerCase();
+    if (b.includes('budget') || b.includes('500')) mappedBudget = 'Budget';
+    else if (b.includes('luxury') || b.includes('3000')) mappedBudget = 'Luxury';
+    else mappedBudget = 'Medium';
+
+    const newForm = {
+      country,
+      cities: cities.length > 0 ? cities : [''],
+      startDate: parsedStart,
+      endDate: parsedEnd,
+      budget: mappedBudget,
+      interests: interests || ''
+    };
+
+    setForm(newForm);
+
+    // Auto-submit if we have all required fields
+    if (destination && parsedStart && parsedEnd) {
+      setAutoSubmitting(true);
+      setLoading(true);
+
+      const filledCities = cities.filter(c => c.trim());
+      const dest = filledCities.length > 0
+        ? `${filledCities.join(', ')}, ${country}`
+        : country;
+
+      fetch('/api/itinerary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination: dest,
+          country,
+          cities: filledCities,
+          startDate: parsedStart,
+          endDate: parsedEnd,
+          budget: mappedBudget,
+          interests: interests || ''
+        })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.tripId) {
+            router.push('/dashboard/trips/' + data.tripId);
+          } else {
+            setError(data.error || 'Failed to generate. Please fill the form and try again.');
+            setLoading(false);
+            setAutoSubmitting(false);
+          }
+        })
+        .catch(() => {
+          setError('Something went wrong. Please try again.');
+          setLoading(false);
+          setAutoSubmitting(false);
+        });
+    }
+  }, []);
 
   function addCity() {
     setForm({ ...form, cities: [...form.cities, ''] });
@@ -84,11 +178,21 @@ export default function PlanPage() {
           <p className="text-[#64748b]">Tell TripMind AI where you want to go — get a full itinerary in 30 seconds.</p>
         </div>
 
+        {/* Auto-generating banner */}
+        {autoSubmitting && (
+          <div className="mb-6 bg-gradient-to-r from-violet-600 to-pink-600 rounded-2xl p-4 flex items-center gap-3 text-white shadow-lg shadow-violet-200">
+            <Loader2 size={20} className="animate-spin shrink-0" />
+            <div>
+              <p className="font-bold text-sm">Generating your itinerary from Sarah's chat...</p>
+              <p className="text-white/80 text-xs">Usually takes 15-30 seconds. Hang tight! ✨</p>
+            </div>
+          </div>
+        )}
+
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="h-1.5 bg-gradient-to-r from-violet-600 to-pink-600" />
           <div className="p-8 space-y-6">
 
-            {/* Country */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
                 <Globe size={15} className="text-violet-500" /> Country
@@ -99,7 +203,6 @@ export default function PlanPage() {
                 className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-[#0f172a] placeholder-gray-400 transition" />
             </div>
 
-            {/* Cities */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
                 <MapPin size={15} className="text-violet-500" /> Cities to Visit
@@ -129,7 +232,6 @@ export default function PlanPage() {
               </div>
             </div>
 
-            {/* Dates */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
@@ -149,7 +251,6 @@ export default function PlanPage() {
               </div>
             </div>
 
-            {/* Budget */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
                 <DollarSign size={15} className="text-violet-500" /> Budget
@@ -164,7 +265,6 @@ export default function PlanPage() {
               </div>
             </div>
 
-            {/* Interests */}
             <div>
               <label className="flex items-center gap-2 text-sm font-semibold text-[#0f172a] mb-2">
                 <Heart size={15} className="text-violet-500" /> Interests

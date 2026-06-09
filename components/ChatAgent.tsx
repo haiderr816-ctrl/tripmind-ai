@@ -44,7 +44,7 @@ export default function ChatAgent() {
   const [genError, setGenError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // On mount: if user just logged in and there's a pending lead, auto-generate
+  // On mount: if user just logged in and there's a pending lead, auto-redirect to plan page
   useEffect(() => {
     if (!isSignedIn) return;
     const pending = localStorage.getItem(STORAGE_KEY);
@@ -52,12 +52,10 @@ export default function ChatAgent() {
     try {
       const saved = JSON.parse(pending);
       localStorage.removeItem(STORAGE_KEY);
-      // Auto-trigger generation with saved lead data
       setLeadData(saved.leadData);
       setMessages(saved.messages);
       setReadyToGenerate(true);
       setOpen(true);
-      // Small delay so UI renders first
       setTimeout(() => {
         doGenerate(saved.leadData);
       }, 800);
@@ -96,41 +94,28 @@ export default function ChatAgent() {
     }
   }
 
+  // Redirects to plan page with params — plan page auto-fills and auto-submits
   async function doGenerate(lead: any) {
     setGenerating(true);
     setGenError('');
     try {
       const destRaw = lead.destination || '';
-      const parts = destRaw.split(',').map((s: string) => s.trim()).filter(Boolean);
-      const country = parts[parts.length - 1] || destRaw;
-      const cities = parts.length > 1 ? parts.slice(0, -1) : [];
       const dateParts = (lead.dates || '').split(' to ');
       const startDate = dateParts[0]?.trim() || '';
       const endDate = dateParts[1]?.trim() || '';
 
-      const res = await fetch('/api/itinerary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          destination: destRaw,
-          country,
-          cities,
-          startDate,
-          endDate,
-          budget: lead.budget || 'Medium',
-          interests: lead.interests || '',
-        })
+      const params = new URLSearchParams({
+        destination: destRaw,
+        startDate,
+        endDate,
+        budget: lead.budget || 'Medium',
+        interests: lead.interests || '',
       });
-      const data = await res.json();
-      if (data.tripId) {
-        setOpen(false);
-        router.push('/dashboard/trips/' + data.tripId);
-      } else {
-        setGenError(data.error || 'Something went wrong. Please try again.');
-      }
+
+      setOpen(false);
+      router.push('/dashboard/plan?' + params.toString());
     } catch {
-      setGenError('Network error. Please try again.');
-    } finally {
+      setGenError('Something went wrong. Please try again.');
       setGenerating(false);
     }
   }
@@ -139,11 +124,9 @@ export default function ChatAgent() {
     if (isSignedIn) {
       doGenerate(leadData);
     } else {
-      // Save everything to localStorage so we can resume after login
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ leadData, messages }));
       } catch (e) {}
-      // Show login prompt message in chat
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: "Almost there! 🎉\n\nJust sign in quickly and I'll instantly generate your full itinerary — no need to start over, your trip details are saved!"
@@ -153,8 +136,6 @@ export default function ChatAgent() {
 
   const lastMessage = messages[messages.length - 1];
   const quickReplies = lastMessage?.role === 'assistant' && !loading ? getQuickReplies(lastMessage.content) : [];
-
-  // Show login button if not signed in and last message is the "sign in" prompt
   const showLoginPrompt = !isSignedIn && lastMessage?.content?.includes('Just sign in quickly');
 
   return (
@@ -229,24 +210,24 @@ export default function ChatAgent() {
 
             {/* Login prompt */}
             {showLoginPrompt && (
-              <div className="pl-9">
+              <div className="pl-9 flex flex-col gap-2">
                 <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                   <button className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg shadow-violet-200">
                     <LogIn size={15} /> Sign In & Generate Itinerary ✨
                   </button>
                 </SignInButton>
-                <p className="text-center text-xs text-gray-400 mt-2">Free to sign in · Your trip details are saved</p>
+                <p className="text-center text-xs text-gray-400">Free to sign in · Your trip details are saved</p>
               </div>
             )}
 
-            {/* Generate Button (only shown when signed in) */}
-            {readyToGenerate && !loading && isSignedIn && (
+            {/* Generate Button — signed in users */}
+            {readyToGenerate && !loading && isSignedIn && !showLoginPrompt && (
               <div className="flex flex-col gap-2 pl-9">
                 {genError && <p className="text-xs text-red-500 px-1">{genError}</p>}
                 <button onClick={handleGenerate} disabled={generating}
                   className="flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg shadow-violet-200 disabled:opacity-60">
                   {generating ? (
-                    <><span className="animate-spin inline-block">⏳</span> Generating your itinerary...</>
+                    <><span className="animate-spin inline-block">⏳</span> Opening plan page...</>
                   ) : (
                     <><Sparkles size={14} /> ✨ Generate My Full Itinerary</>
                   )}
@@ -262,7 +243,7 @@ export default function ChatAgent() {
               </div>
             )}
 
-            {/* Generate button for not-signed-in users (before they click) */}
+            {/* Generate button — not signed in, before login prompt */}
             {readyToGenerate && !loading && !isSignedIn && !showLoginPrompt && (
               <div className="flex flex-col gap-2 pl-9">
                 <button onClick={handleGenerate}
