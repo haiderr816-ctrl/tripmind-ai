@@ -74,12 +74,12 @@ export async function POST(req: NextRequest) {
     const data = await res.json();
     let reply = data.choices?.[0]?.message?.content || "Sorry, could you repeat that?";
 
-    // Extract LEAD_DATA — use a safer regex that handles spaces in values
+    // Extract LEAD_DATA
     let extractedLead: any = {};
-    const leadMatch = reply.match(/LEAD_DATA:(\{.*?\})\s*$/ms);
+    const leadMatch = reply.match(/LEAD_DATA:(\{[^}]+\})/);
     if (leadMatch) {
       try { extractedLead = JSON.parse(leadMatch[1]); } catch (e) {}
-      reply = reply.replace(/\nLEAD_DATA:\{.*?\}\s*$/ms, '').trim();
+      reply = reply.replace(/\nLEAD_DATA:\{[^}]+\}/, '').trim();
     }
 
     // Check ready to generate
