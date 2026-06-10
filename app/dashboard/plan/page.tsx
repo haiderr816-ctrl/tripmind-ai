@@ -8,14 +8,14 @@ function parseDateString(raw: string): string {
   if (!raw) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
   try {
-    // Clean up input: "25 of july" → "25 july", "july 25" → "july 25"
-    const cleaned = raw
-      .replace(/\bof\b/gi, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const cleaned = raw.replace(/\bof\b/gi, '').replace(/\s+/g, ' ').trim();
     const year = new Date().getFullYear();
-    // Try "25 July 2026" and "July 25 2026" formats
-    for (const attempt of [`${cleaned} ${year}`, `${cleaned} ${year + 1}`]) {
+    const attempts = [
+      `${cleaned} ${year}`,
+      `${cleaned} ${year + 1}`,
+      cleaned,
+    ];
+    for (const attempt of attempts) {
       const d = new Date(attempt);
       if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
     }

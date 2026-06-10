@@ -45,20 +45,25 @@ export default function ChatAgent() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // On mount: if user just logged in and there's a pending lead, auto-redirect to plan page
-  useEffect(() => {
+ useEffect(() => {
     if (!isSignedIn) return;
     const pending = localStorage.getItem(STORAGE_KEY);
     if (!pending) return;
     try {
       const saved = JSON.parse(pending);
       localStorage.removeItem(STORAGE_KEY);
-      setLeadData(saved.leadData);
-      setMessages(saved.messages);
-      setReadyToGenerate(true);
-      setOpen(true);
-      setTimeout(() => {
-        doGenerate(saved.leadData);
-      }, 800);
+      // Directly redirect to plan page with params — no need to restore chat
+      const lead = saved.leadData;
+      const startDate = lead.startDate || (lead.dates || '').split(' to ')[0]?.trim() || '';
+      const endDate = lead.endDate || (lead.dates || '').split(' to ')[1]?.trim() || '';
+      const params = new URLSearchParams({
+        destination: lead.destination || '',
+        startDate,
+        endDate,
+        budget: lead.budget || 'Medium',
+        interests: lead.interests || '',
+      });
+      router.push('/dashboard/plan?' + params.toString());
     } catch (e) {
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -211,7 +216,7 @@ export default function ChatAgent() {
             {/* Login prompt */}
             {showLoginPrompt && (
               <div className="pl-9 flex flex-col gap-2">
-                <SignInButton mode="modal" forceRedirectUrl="/dashboard">
+                <SignInButton mode="modal" forceRedirectUrl="/">
                   <button className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg shadow-violet-200">
                     <LogIn size={15} /> Sign In & Generate Itinerary ✨
                   </button>
