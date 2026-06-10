@@ -1,5 +1,6 @@
 "use client";
 
+import ChatAgent from '@/components/ChatAgent';
 import { useState, useEffect } from "react";
 import { useAuth, SignInButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -422,6 +423,7 @@ export default function Home() {
           © 2026 TripMind AI. All rights reserved. Built with AI. ✨
         </div>
       </footer>
+      <ChatAgent />
 
     </div>
   );

@@ -7,19 +7,29 @@ import { Sparkles, MapPin, Calendar, DollarSign, Heart, Loader2, Globe, Plus, X 
 function parseDateString(raw: string): string {
   if (!raw) return '';
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
-  try {
-    const cleaned = raw.replace(/\bof\b/gi, '').replace(/\s+/g, ' ').trim();
-    const year = new Date().getFullYear();
-    const attempts = [
-      `${cleaned} ${year}`,
-      `${cleaned} ${year + 1}`,
-      cleaned,
-    ];
-    for (const attempt of attempts) {
-      const d = new Date(attempt);
-      if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
-    }
-  } catch {}
+  const months: Record<string, string> = {
+    jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+    jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12',
+    january: '01', february: '02', march: '03', april: '04', june: '06',
+    july: '07', august: '08', september: '09', october: '10', november: '11', december: '12'
+  };
+  const cleaned = raw.replace(/\bof\b/gi, '').replace(/\s+/g, ' ').trim().toLowerCase();
+  const year = new Date().getFullYear();
+  // Try "June 15" or "june 15"
+  const m1 = cleaned.match(/^([a-z]+)\s+(\d{1,2})$/);
+  if (m1 && months[m1[1]]) return `${year}-${months[m1[1]]}-${m1[2].padStart(2, '0')}`;
+  // Try "15 June" or "15 june"
+  const m2 = cleaned.match(/^(\d{1,2})\s+([a-z]+)$/);
+  if (m2 && months[m2[2]]) return `${year}-${months[m2[2]]}-${m2[1].padStart(2, '0')}`;
+
+  // Try "15 June 2026"
+  const m3 = cleaned.match(/^(\d{1,2})\s+([a-z]+)\s+(\d{4})$/);
+  if (m3 && months[m3[2]]) return `${m3[3]}-${months[m3[2]]}-${m3[1].padStart(2, '0')}`;
+
+  // Try "June 15 2026"
+  const m4 = cleaned.match(/^([a-z]+)\s+(\d{1,2})\s+(\d{4})$/);
+  if (m4 && months[m4[1]]) return `${m4[3]}-${months[m4[1]]}-${m4[2].padStart(2, '0')}`;
+
   return '';
 }
 
