@@ -92,28 +92,38 @@ export async function POST(req: NextRequest) {
       if (v && v !== '') mergedLead[k] = v;
     }
 
-    // Save lead
-    if (mergedLead.email) {
-      try {
-        const baseUrl = req.headers.get('origin') || req.nextUrl.origin;
-        await fetch(`${baseUrl}/api/save-lead`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(mergedLead)
-        });
-      } catch (e) {
-        console.error('Save lead failed:', e);
-      }
-    }
-
-    return NextResponse.json({ reply, leadData: mergedLead, readyToGenerate });
-
-  } catch (error: any) {
-    console.error('Agent error:', error);
-    return NextResponse.json({
-      reply: "Sorry about that! Could you repeat what you said?",
-      leadData: {},
-      readyToGenerate: false
-    }, { status: 500 });
+    // Save lead directly via Prisma instead of HTTP fetch
+if (mergedLead.email) {
+  try {
+    const { prisma } = await import('@/lib/prisma');
+    const resolvedDates = mergedLead.dates || 
+      (mergedLead.startDate && mergedLead.endDate 
+        ? `${mergedLead.startDate} to ${mergedLead.endDate}` 
+        : mergedLead.startDate || '');
+    await prisma.lead.upsert({
+      where: { email: mergedLead.email },
+      update: {
+        name: mergedLead.name || undefined,
+        phone: mergedLead.phone || undefined,
+        destination: mergedLead.destination || undefined,
+        dates: resolvedDates || undefined,
+        travelers: mergedLead.travelers || undefined,
+        budget: mergedLead.budget || undefined,
+        interests: mergedLead.interests || undefined,
+        updatedAt: new Date(),
+      },
+      create: {
+        email: mergedLead.email,
+        name: mergedLead.name || '',
+        phone: mergedLead.phone || '',
+        destination: mergedLead.destination || '',
+        dates: resolvedDates || '',
+        travelers: mergedLead.travelers || '',
+        budget: mergedLead.budget || '',
+        interests: mergedLead.interests || '',
+      },
+    });
+  } catch (e) {
+    console.error('Save lead failed:', e);
   }
 }
