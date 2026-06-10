@@ -3,7 +3,7 @@
 import * as XLSX from 'xlsx';
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { Users, Mail, Phone, MapPin, Calendar, DollarSign, Search, Download, ExternalLink } from 'lucide-react';
+import { Users, Mail, Phone, MapPin, Calendar, DollarSign, Search, Download } from 'lucide-react';
 
 const ADMIN_EMAIL = 'haiderr816@gmail.com';
 
@@ -38,25 +38,6 @@ export default function LeadsPage() {
       (l.destination || '').toLowerCase().includes(s);
   });
 
-  function exportExcel() {
-  const rows = leads.map(l => ({
-    Name: l.name || '',
-    Email: l.email || '',
-    Phone: l.phone || '',
-    Destination: l.destination || '',
-    Dates: l.dates || '',
-    'Stay Duration': calcDays(l.dates),
-    Travelers: l.travelers || '',
-    Budget: l.budget || '',
-    Interests: l.interests || '',
-    'Created At': l.createdAt ? new Date(l.createdAt).toLocaleDateString() : '',
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Leads');
-  XLSX.writeFile(wb, 'tripmind-leads.xlsx');
-}
-
   function calcDays(dates: string) {
     if (!dates) return '-';
     const parts = dates.split(' to ');
@@ -67,8 +48,38 @@ export default function LeadsPage() {
     return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86400000)) + ' days';
   }
 
+  function exportCSV() {
+    const headers = ['Name', 'Email', 'Phone', 'Destination', 'Dates', 'Stay', 'Travelers', 'Budget', 'Interests'];
+    const rows = leads.map(l => [l.name, l.email, l.phone, l.destination, l.dates, calcDays(l.dates), l.travelers, l.budget, l.interests]);
+    const csv = [headers, ...rows].map(r => r.map((c: any) => `"${c || ''}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'tripmind-leads.csv'; a.click();
+  }
+
+  function exportExcel() {
+    const rows = leads.map(l => ({
+      Name: l.name || '',
+      Email: l.email || '',
+      Phone: l.phone || '',
+      Destination: l.destination || '',
+      Dates: l.dates || '',
+      'Stay Duration': calcDays(l.dates),
+      Travelers: l.travelers || '',
+      Budget: l.budget || '',
+      Interests: l.interests || '',
+      'Created At': l.createdAt ? new Date(l.createdAt).toLocaleDateString() : '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Leads');
+    XLSX.writeFile(wb, 'tripmind-leads.xlsx');
+  }
+
   return (
     <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
+
+      {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-200">
@@ -80,25 +91,18 @@ export default function LeadsPage() {
           </div>
         </div>
         {leads.length > 0 && (
-          <button onClick={exportCSV}
-            className="flex items-center gap-2 bg-white border border-gray-200 text-[#64748b] px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-violet-300 hover:text-violet-600 transition shadow-sm">
-            <Download size={15} /> Export CSV
-          </button>
+          <div className="flex gap-2">
+            <button onClick={exportCSV}
+              className="flex items-center gap-2 bg-white border border-gray-200 text-[#64748b] px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-violet-300 hover:text-violet-600 transition shadow-sm">
+              <Download size={15} /> CSV
+            </button>
+            <button onClick={exportExcel}
+              className="flex items-center gap-2 bg-white border border-gray-200 text-[#64748b] px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-green-300 hover:text-green-600 transition shadow-sm">
+              <Download size={15} /> Excel
+            </button>
+          </div>
         )}
       </div>
-      
-      {leads.length > 0 && (
-  <div className="flex gap-2">
-    <button onClick={exportCSV}
-      className="flex items-center gap-2 bg-white border border-gray-200 text-[#64748b] px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-violet-300 hover:text-violet-600 transition shadow-sm">
-      <Download size={15} /> CSV
-    </button>
-    <button onClick={exportExcel}
-      className="flex items-center gap-2 bg-white border border-gray-200 text-[#64748b] px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-green-300 hover:text-green-600 transition shadow-sm">
-      <Download size={15} /> Excel
-    </button>
-  </div>
-)}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -153,7 +157,7 @@ export default function LeadsPage() {
                   <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Stay</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Budget</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Interests</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Date</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Added</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
