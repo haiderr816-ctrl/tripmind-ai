@@ -1,28 +1,34 @@
-﻿import { currentUser } from '@clerk/nextjs/server';
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+﻿import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
+import { apiSuccess } from "@/lib/api-response";
+import { handleApiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authResult = await requireAuth();
+    if ("error" in authResult) {
+      return authResult.error;
     }
 
     const trips = await prisma.trip.findMany({
-      where: { userId: clerkUser.id },
-      orderBy: { createdAt: 'desc' },
+      where: { userId: authResult.userId },
+      orderBy: { createdAt: "desc" },
     });
 
     const parsed = trips.map((trip) => ({
       ...trip,
-      interests: trip.interests || '',
-      itinerary: (() => { try { return JSON.parse(trip.itinerary); } catch { return {}; } })(),
+      interests: trip.interests || "",
+      itinerary: (() => {
+        try {
+          return JSON.parse(trip.itinerary);
+        } catch {
+          return {};
+        }
+      })(),
     }));
 
-    return NextResponse.json({ trips: parsed });
+    return apiSuccess({ trips: parsed });
   } catch (error) {
-    console.error('get-trips error:', error);
-    return NextResponse.json({ error: 'Failed to get trips' }, { status: 500 });
+    return handleApiError(error);
   }
 }

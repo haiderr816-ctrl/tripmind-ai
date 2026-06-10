@@ -1,20 +1,24 @@
-﻿import { currentUser } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+﻿import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validate";
+import { saveTripBodySchema } from "@/lib/schemas/api";
+import { apiSuccess } from "@/lib/api-response";
+import { handleApiError } from "@/lib/api-error";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authResult = await requireAuth();
+    if ("error" in authResult) {
+      return authResult.error;
     }
 
-    const body = await req.json();
-    const { destination, startDate, endDate, budget, interests, itinerary } = body;
+    const { destination, startDate, endDate, budget, interests, itinerary } =
+      await parseJsonBody(req, saveTripBodySchema);
 
     const newTrip = await prisma.trip.create({
       data: {
-        userId: clerkUser.id,
+        userId: authResult.userId,
         destination,
         startDate,
         endDate,
@@ -24,9 +28,8 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ success: true, trip: newTrip });
+    return apiSuccess({ success: true, trip: newTrip });
   } catch (error) {
-    console.error("save-trip error:", error);
-    return NextResponse.json({ error: "Failed to save trip" }, { status: 500 });
+    return handleApiError(error);
   }
 }

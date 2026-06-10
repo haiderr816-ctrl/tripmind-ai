@@ -1,13 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { parseJsonBody } from "@/lib/validate";
+import { generateItineraryBodySchema } from "@/lib/schemas/api";
+import { apiSuccess } from "@/lib/api-response";
+import { handleApiError } from "@/lib/api-error";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { destination, startDate, endDate, budget, interests } = body;
+    const { destination, startDate, endDate, interests } =
+      await parseJsonBody(request, generateItineraryBodySchema);
 
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const daysCount = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const daysCount =
+      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     const activities = [
       "Visit historic landmarks",
@@ -22,13 +27,21 @@ export async function POST(request: NextRequest) {
       "Relax at a spa or beach",
     ];
 
-    const hotelOptions = ["Luxury resort", "Boutique hotel", "Budget-friendly inn"];
+    const hotelOptions = [
+      "Luxury resort",
+      "Boutique hotel",
+      "Budget-friendly inn",
+    ];
 
     const days = [];
     for (let i = 1; i <= daysCount; i++) {
       const date = new Date(start);
       date.setDate(start.getDate() + (i - 1));
-      const dateStr = date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+      const dateStr = date.toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
       const shuffled = [...activities].sort(() => 0.5 - Math.random());
 
       days.push({
@@ -37,13 +50,34 @@ export async function POST(request: NextRequest) {
         summary: `Day ${i}: Discover ${destination} highlights`,
         schedule: [
           { time: "09:00 AM", activity: shuffled[0], location: "City center" },
-          { time: "12:30 PM", activity: "Lunch at local restaurant", location: "Local restaurant" },
-          { time: "02:00 PM", activity: shuffled[1], location: "Cultural district" },
-          { time: "07:00 PM", activity: "Dinner at fine dining restaurant", location: "Downtown area" },
-          { time: "09:00 PM", activity: shuffled[2], location: "Nightlife hub" },
+          {
+            time: "12:30 PM",
+            activity: "Lunch at local restaurant",
+            location: "Local restaurant",
+          },
+          {
+            time: "02:00 PM",
+            activity: shuffled[1],
+            location: "Cultural district",
+          },
+          {
+            time: "07:00 PM",
+            activity: "Dinner at fine dining restaurant",
+            location: "Downtown area",
+          },
+          {
+            time: "09:00 PM",
+            activity: shuffled[2],
+            location: "Nightlife hub",
+          },
         ],
-        accommodation: hotelOptions[Math.floor(Math.random() * hotelOptions.length)],
-        tips: ["Book tickets in advance", "Use local transport", "Carry a water bottle"],
+        accommodation:
+          hotelOptions[Math.floor(Math.random() * hotelOptions.length)],
+        tips: [
+          "Book tickets in advance",
+          "Use local transport",
+          "Carry a water bottle",
+        ],
       });
     }
 
@@ -63,9 +97,8 @@ export async function POST(request: NextRequest) {
       ],
     };
 
-    return NextResponse.json({ success: true, data: itinerary });
+    return apiSuccess({ success: true, data: itinerary });
   } catch (error) {
-    console.error("Error generating itinerary:", error);
-    return NextResponse.json({ success: false, error: "Failed to generate itinerary" }, { status: 500 });
+    return handleApiError(error);
   }
 }

@@ -1,15 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { parseJsonBody } from "@/lib/validate";
+import { saveLeadBodySchema } from "@/lib/schemas/api";
+import { apiSuccess } from "@/lib/api-response";
+import { handleApiError } from "@/lib/api-error";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-    const { name, email, phone, destination, dates, startDate, endDate, travelers, budget, interests } = body;
-const resolvedDates = dates || (startDate && endDate ? `${startDate} to ${endDate}` : startDate || '');
+    const body = await parseJsonBody(req, saveLeadBodySchema);
+    const {
+      name,
+      email,
+      phone,
+      destination,
+      dates,
+      startDate,
+      endDate,
+      travelers,
+      budget,
+      interests,
+    } = body;
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email required' }, { status: 400 });
-    }
+    const resolvedDates =
+      dates ||
+      (startDate && endDate ? `${startDate} to ${endDate}` : startDate || "");
 
     await prisma.lead.upsert({
       where: { email },
@@ -17,7 +31,7 @@ const resolvedDates = dates || (startDate && endDate ? `${startDate} to ${endDat
         name: name || undefined,
         phone: phone || undefined,
         destination: destination || undefined,
-        dates: dates || undefined,
+        dates: resolvedDates || undefined,
         travelers: travelers || undefined,
         budget: budget || undefined,
         interests: interests || undefined,
@@ -25,19 +39,18 @@ const resolvedDates = dates || (startDate && endDate ? `${startDate} to ${endDat
       },
       create: {
         email,
-        name: name || '',
-        phone: phone || '',
-        destination: destination || '',
-        dates: dates || '',
-        travelers: travelers || '',
-        budget: budget || '',
-        interests: interests || '',
+        name: name || "",
+        phone: phone || "",
+        destination: destination || "",
+        dates: resolvedDates || "",
+        travelers: travelers || "",
+        budget: budget || "",
+        interests: interests || "",
       },
     });
 
-    return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('Save lead error:', error);
-    return NextResponse.json({ error: 'Failed to save lead' }, { status: 500 });
+    return apiSuccess({ success: true });
+  } catch (error) {
+    return handleApiError(error);
   }
 }

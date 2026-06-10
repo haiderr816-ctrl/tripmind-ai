@@ -1,14 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
+import { apiSuccess } from "@/lib/api-response";
+import { handleApiError } from "@/lib/api-error";
 
 export async function GET() {
   try {
+    const adminResult = await requireAdmin();
+    if ("error" in adminResult) {
+      return adminResult.error;
+    }
+
     const leads = await prisma.lead.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json({ leads });
+
+    return apiSuccess({ leads });
   } catch (error) {
-    console.error('get-leads error:', error);
-    return NextResponse.json({ error: 'Failed to get leads' }, { status: 500 });
+    return handleApiError(error);
   }
 }

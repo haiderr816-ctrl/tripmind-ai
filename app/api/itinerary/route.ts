@@ -1,25 +1,39 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/validate";
+import { itineraryBodySchema } from "@/lib/schemas/api";
+import { apiSuccess, apiError } from "@/lib/api-response";
+import { ApiError, handleApiError } from "@/lib/api-error";
+import { applyRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 async function getCountryInfo(country: string) {
   try {
-    const res = await fetch(`https://restcountries.com/v3.1/search?name=${encodeURIComponent(country)}`);
+    const res = await fetch(
+      `https://restcountries.com/v3.1/search?name=${encodeURIComponent(country)}`
+    );
     if (!res.ok) return null;
     const data = await res.json();
     const c = data[0];
     return {
-      currency: Object.values(c.currencies || {})[0] as any,
-      language: Object.values(c.languages || {})[0],
-      capital: c.capital?.[0],
-      timezone: c.timezones?.[0],
+      currency: Object.values(c.currencies || {})[0] as {
+        name?: string;
+        symbol?: string;
+      },
+      language: Object.values(c.languages || {})[0] as string,
+      capital: c.capital?.[0] as string,
+      timezone: c.timezones?.[0] as string,
     };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function getWeather(destination: string, startDate: string) {
   try {
-    const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(destination)}&count=1`);
+    const geoRes = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(destination)}&count=1`
+    );
     const geoData = await geoRes.json();
     const loc = geoData.results?.[0];
     if (!loc) return null;
@@ -37,18 +51,29 @@ async function getWeather(destination: string, startDate: string) {
       rainChance: rain,
       summary: `${Math.round(temp_min)}°C – ${Math.round(temp_max)}°C, ${rain}% chance of rain`,
     };
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    const { destination, country, cities, startDate, endDate, budget, interests } = await req.json();
-    if (!destination || !startDate || !endDate) {
-      return NextResponse.json({ error: 'Destination, start date and end date are required' }, { status: 400 });
+    const authResult = await requireAuth();
+    if ("error" in authResult) {
+      return authResult.error;
     }
+
+    const rateLimitResponse = applyRateLimit(
+      req,
+      "itinerary",
+      RATE_LIMITS.itinerary,
+      authResult.userId
+    );
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const { userId } = authResult;
+    const { destination, country, cities, startDate, endDate, budget, interests } =
+      await parseJsonBody(req, itineraryBodySchema);
 
     const filledCities = (cities || []).filter((c: string) => c.trim());
     const isMultiCity = filledCities.length > 1;
@@ -58,27 +83,29 @@ export async function POST(req: NextRequest) {
       getCountryInfo(country || destination),
     ]);
 
-    const weatherContext = weather ? `Weather forecast at start: ${weather.summary}` : '';
+    const weatherContext = weather
+      ? `Weather forecast at start: ${weather.summary}`
+      : "";
     const countryContext = countryInfo
-      ? `Currency: ${(countryInfo.currency as any)?.name || ''} (${(countryInfo.currency as any)?.symbol || ''}), Language: ${countryInfo.language}`
-      : '';
+      ? `Currency: ${countryInfo.currency?.name || ""} (${countryInfo.currency?.symbol || ""}), Language: ${countryInfo.language}`
+      : "";
 
     const cityPlanningContext = isMultiCity
-      ? `This is a MULTI-CITY trip. Distribute the days across these cities in order: ${filledCities.join(' → ')}. Allocate days proportionally. Each city should have at least 1-2 days. Show the city transition in the schedule.`
+      ? `This is a MULTI-CITY trip. Distribute the days across these cities in order: ${filledCities.join(" → ")}. Allocate days proportionally. Each city should have at least 1-2 days. Show the city transition in the schedule.`
       : filledCities.length === 1
-      ? `Focus the entire trip on ${filledCities[0]}, ${country}.`
-      : `Plan the best highlights across ${country}.`;
+        ? `Focus the entire trip on ${filledCities[0]}, ${country}.`
+        : `Plan the best highlights across ${country}.`;
 
     const prompt = `You are an expert travel planner and budget advisor. Create a detailed realistic day-by-day itinerary with complete cost estimates.
 
 Trip Details:
 - Destination: ${destination}
 - Country: ${country || destination}
-- Cities: ${filledCities.length > 0 ? filledCities.join(', ') : 'Best cities in ' + (country || destination)}
+- Cities: ${filledCities.length > 0 ? filledCities.join(", ") : "Best cities in " + (country || destination)}
 - Start Date: ${startDate}
 - End Date: ${endDate}
 - Budget Level: ${budget}
-- Interests: ${interests || 'general sightseeing'}
+- Interests: ${interests || "general sightseeing"}
 ${weatherContext}
 ${countryContext}
 
@@ -135,27 +162,31 @@ Return ONLY a valid JSON object, no markdown, no extra text:
   "emergencyContacts": { "police": "string", "ambulance": "string", "touristHelpline": "string" }
 }`;
 
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "user", content: prompt }],
         temperature: 0.7,
-        max_tokens: 8192
-      })
+        max_tokens: 8192,
+      }),
     });
 
     const data = await res.json();
-    if (!res.ok) return NextResponse.json({ error: data.error?.message || 'Groq API failed' }, { status: 500 });
+    if (!res.ok) {
+      throw new ApiError(data.error?.message || "Groq API failed", 500);
+    }
 
     let text = data.choices?.[0]?.message?.content;
-    if (!text) return NextResponse.json({ error: 'No response from Groq' }, { status: 500 });
+    if (!text) {
+      throw new ApiError("No response from Groq", 500);
+    }
 
-    text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    text = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
     const itinerary = JSON.parse(text);
 
     if (weather) itinerary.weather = weather;
@@ -167,16 +198,17 @@ Return ONLY a valid JSON object, no markdown, no extra text:
         destination,
         startDate,
         endDate,
-        budget: budget || 'Medium',
-        interests: interests || '',
+        budget: budget || "Medium",
+        interests: interests || "",
         itinerary: JSON.stringify(itinerary),
-      }
+      },
     });
 
-    return NextResponse.json({ tripId: trip.id, itinerary });
-
-  } catch (error: any) {
-    console.error('Itinerary generation error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to generate itinerary' }, { status: 500 });
+    return apiSuccess({ tripId: trip.id, itinerary });
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return apiError("Failed to parse itinerary response", 500);
+    }
+    return handleApiError(error);
   }
 }

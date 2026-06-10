@@ -1,21 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireAuth } from "@/lib/auth";
+import { parseSearchParams } from "@/lib/validate";
+import { tripIdQuerySchema } from "@/lib/schemas/api";
+import { apiSuccess } from "@/lib/api-response";
+import { handleApiError } from "@/lib/api-error";
 
 export async function DELETE(req: NextRequest) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-  const id = req.nextUrl.searchParams.get('id');
-  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-
   try {
+    const authResult = await requireAuth();
+    if ("error" in authResult) {
+      return authResult.error;
+    }
+
+    const { id } = parseSearchParams(new URL(req.url), tripIdQuerySchema);
+
     await prisma.trip.deleteMany({
-      where: { id: String(id), userId },
+      where: { id, userId: authResult.userId },
     });
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error('delete-trip error:', err);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+
+    return apiSuccess({ success: true });
+  } catch (error) {
+    return handleApiError(error);
   }
 }

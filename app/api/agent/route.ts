@@ -1,5 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { ZodError } from "zod";
+import { prisma } from "@/lib/prisma";
+import { handleApiError } from "@/lib/api-error";
+import { parseJsonBody } from "@/lib/validate";
+import { agentBodySchema } from "@/lib/schemas/api";
+import { applyRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const SYSTEM_PROMPT = `You are Sarah, a friendly Personal Travel Manager at TripMind AI with 10+ years of experience.
 
@@ -52,54 +57,59 @@ Rules for LEAD_DATA:
 - NEVER skip this line`;
 
 export async function POST(req: NextRequest) {
-  try {
-    const { messages, leadData } = await req.json();
+  const rateLimitResponse = applyRateLimit(req, "agent", RATE_LIMITS.agent);
+  if (rateLimitResponse) return rateLimitResponse;
 
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
+  try {
+    const { messages, leadData } = await parseJsonBody(req, agentBodySchema);
+
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: "llama-3.3-70b-versatile",
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          ...messages.map((m: any) => ({ role: m.role, content: m.content }))
+          { role: "system", content: SYSTEM_PROMPT },
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
         ],
         temperature: 0.7,
-        max_tokens: 500
-      })
+        max_tokens: 500,
+      }),
     });
 
     const data = await res.json();
-    let reply = data.choices?.[0]?.message?.content || "Sorry, could you repeat that?";
+    let reply =
+      data.choices?.[0]?.message?.content || "Sorry, could you repeat that?";
 
-    // Extract LEAD_DATA
-    let extractedLead: any = {};
+    let extractedLead: Record<string, string> = {};
     const leadMatch = reply.match(/LEAD_DATA:(\{[^}]+\})/);
     if (leadMatch) {
-      try { extractedLead = JSON.parse(leadMatch[1]); } catch (e) {}
-      reply = reply.replace(/\nLEAD_DATA:\{[^}]+\}/, '').trim();
+      try {
+        extractedLead = JSON.parse(leadMatch[1]);
+      } catch {
+        extractedLead = {};
+      }
+      reply = reply.replace(/\nLEAD_DATA:\{[^}]+\}/, "").trim();
     }
 
-    // Check ready to generate
-    const readyToGenerate = reply.includes('READY_TO_GENERATE');
-    reply = reply.replace('READY_TO_GENERATE', '').trim();
+    const readyToGenerate = reply.includes("READY_TO_GENERATE");
+    reply = reply.replace("READY_TO_GENERATE", "").trim();
 
-    // Merge lead data
-    const mergedLead: any = { ...leadData };
+    const mergedLead: Record<string, string> = { ...leadData };
     for (const [k, v] of Object.entries(extractedLead)) {
-      if (v && v !== '') mergedLead[k] = v;
+      if (v && v !== "") mergedLead[k] = v;
     }
 
-    // Save lead directly via Prisma
     if (mergedLead.email) {
       try {
-        const resolvedDates = mergedLead.dates ||
+        const resolvedDates =
+          mergedLead.dates ||
           (mergedLead.startDate && mergedLead.endDate
             ? `${mergedLead.startDate} to ${mergedLead.endDate}`
-            : mergedLead.startDate || '');
+            : mergedLead.startDate || "");
         await prisma.lead.upsert({
           where: { email: mergedLead.email },
           update: {
@@ -114,28 +124,33 @@ export async function POST(req: NextRequest) {
           },
           create: {
             email: mergedLead.email,
-            name: mergedLead.name || '',
-            phone: mergedLead.phone || '',
-            destination: mergedLead.destination || '',
-            dates: resolvedDates || '',
-            travelers: mergedLead.travelers || '',
-            budget: mergedLead.budget || '',
-            interests: mergedLead.interests || '',
+            name: mergedLead.name || "",
+            phone: mergedLead.phone || "",
+            destination: mergedLead.destination || "",
+            dates: resolvedDates || "",
+            travelers: mergedLead.travelers || "",
+            budget: mergedLead.budget || "",
+            interests: mergedLead.interests || "",
           },
         });
       } catch (e) {
-        console.error('Save lead failed:', e);
+        console.error("Save lead failed:", e);
       }
     }
 
     return NextResponse.json({ reply, leadData: mergedLead, readyToGenerate });
-
-  } catch (error: any) {
-    console.error('Agent error:', error);
-    return NextResponse.json({
-      reply: "Sorry about that! Could you repeat what you said?",
-      leadData: {},
-      readyToGenerate: false
-    }, { status: 500 });
+  } catch (error) {
+    console.error("Agent error:", error);
+    if (error instanceof ZodError) {
+      return handleApiError(error);
+    }
+    return NextResponse.json(
+      {
+        reply: "Sorry about that! Could you repeat what you said?",
+        leadData: {},
+        readyToGenerate: false,
+      },
+      { status: 500 }
+    );
   }
 }
