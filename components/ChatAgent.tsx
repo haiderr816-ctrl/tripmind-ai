@@ -44,18 +44,18 @@ export default function ChatAgent() {
   const [genError, setGenError] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // On mount: if user just logged in and there's a pending lead, auto-redirect to plan page
- useEffect(() => {
+  // Check localStorage on every mount — works regardless of which page we land on
+  useEffect(() => {
     if (!isSignedIn) return;
-    const pending = localStorage.getItem(STORAGE_KEY);
-    if (!pending) return;
     try {
+      const pending = localStorage.getItem(STORAGE_KEY);
+      if (!pending) return;
       const saved = JSON.parse(pending);
       localStorage.removeItem(STORAGE_KEY);
-      // Directly redirect to plan page with params — no need to restore chat
-      const lead = saved.leadData;
+      const lead = saved.leadData || {};
       const startDate = lead.startDate || (lead.dates || '').split(' to ')[0]?.trim() || '';
       const endDate = lead.endDate || (lead.dates || '').split(' to ')[1]?.trim() || '';
+      if (!lead.destination) return;
       const params = new URLSearchParams({
         destination: lead.destination || '',
         startDate,
@@ -77,11 +77,9 @@ export default function ChatAgent() {
     const content = text || input.trim();
     if (!content || loading) return;
     setInput('');
-
     const newMessages = [...messages, { role: 'user', content }];
     setMessages(newMessages);
     setLoading(true);
-
     try {
       const res = await fetch('/api/agent', {
         method: 'POST',
@@ -99,36 +97,25 @@ export default function ChatAgent() {
     }
   }
 
-  // Redirects to plan page with params — plan page auto-fills and auto-submits
-  async function doGenerate(lead: any) {
-    setGenerating(true);
-    setGenError('');
-    try {
-      const destRaw = lead.destination || '';
-      // Use separate startDate/endDate fields from new agent, fallback to splitting dates
-      const startDate = lead.startDate || (lead.dates || '').split(' to ')[0]?.trim() || '';
-      const endDate = lead.endDate || (lead.dates || '').split(' to ')[1]?.trim() || '';
-
-      const params = new URLSearchParams({
-        destination: destRaw,
-        startDate,
-        endDate,
-        budget: lead.budget || 'Medium',
-        interests: lead.interests || '',
-      });
-
-      setOpen(false);
-      router.push('/dashboard/plan?' + params.toString());
-    } catch {
-      setGenError('Something went wrong. Please try again.');
-      setGenerating(false);
-    }
+  function buildPlanUrl(lead: any) {
+    const startDate = lead.startDate || (lead.dates || '').split(' to ')[0]?.trim() || '';
+    const endDate = lead.endDate || (lead.dates || '').split(' to ')[1]?.trim() || '';
+    const params = new URLSearchParams({
+      destination: lead.destination || '',
+      startDate,
+      endDate,
+      budget: lead.budget || 'Medium',
+      interests: lead.interests || '',
+    });
+    return '/dashboard/plan?' + params.toString();
   }
 
   function handleGenerate() {
     if (isSignedIn) {
-      doGenerate(leadData);
+      setGenerating(true);
+      router.push(buildPlanUrl(leadData));
     } else {
+      // Save lead data and the plan URL to localStorage
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ leadData, messages }));
       } catch (e) {}
@@ -143,6 +130,12 @@ export default function ChatAgent() {
   const quickReplies = lastMessage?.role === 'assistant' && !loading ? getQuickReplies(lastMessage.content) : [];
   const showLoginPrompt = !isSignedIn && lastMessage?.content?.includes('Just sign in quickly');
 
+  // Build redirect URL for SignInButton — after login goes straight to plan page
+  const planUrl = buildPlanUrl(leadData);
+  const signInRedirect = leadData.destination
+    ? `/dashboard/plan?destination=${encodeURIComponent(leadData.destination)}&startDate=${encodeURIComponent(leadData.startDate || '')}&endDate=${encodeURIComponent(leadData.endDate || '')}&budget=${encodeURIComponent(leadData.budget || 'Medium')}&interests=${encodeURIComponent(leadData.interests || '')}`
+    : '/dashboard';
+
   return (
     <>
       {/* Bubble */}
@@ -152,7 +145,6 @@ export default function ChatAgent() {
         {!open && <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-white" />}
       </button>
 
-      {/* Chat Window */}
       {open && (
         <div className="fixed bottom-24 right-6 z-50 w-[380px] flex flex-col bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden" style={{maxHeight: '600px'}}>
 
@@ -213,10 +205,10 @@ export default function ChatAgent() {
               </div>
             )}
 
-            {/* Login prompt */}
+            {/* Login prompt — redirects directly to plan page after login */}
             {showLoginPrompt && (
               <div className="pl-9 flex flex-col gap-2">
-                <SignInButton mode="modal" forceRedirectUrl="/">
+                <SignInButton mode="modal" forceRedirectUrl={signInRedirect}>
                   <button className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-violet-600 to-pink-600 text-white px-4 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition shadow-lg shadow-violet-200">
                     <LogIn size={15} /> Sign In & Generate Itinerary ✨
                   </button>
@@ -225,7 +217,7 @@ export default function ChatAgent() {
               </div>
             )}
 
-            {/* Generate Button — signed in users */}
+            {/* Generate Button — signed in */}
             {readyToGenerate && !loading && isSignedIn && !showLoginPrompt && (
               <div className="flex flex-col gap-2 pl-9">
                 {genError && <p className="text-xs text-red-500 px-1">{genError}</p>}
@@ -248,7 +240,7 @@ export default function ChatAgent() {
               </div>
             )}
 
-            {/* Generate button — not signed in, before login prompt */}
+            {/* Generate button — not signed in yet */}
             {readyToGenerate && !loading && !isSignedIn && !showLoginPrompt && (
               <div className="flex flex-col gap-2 pl-9">
                 <button onClick={handleGenerate}
