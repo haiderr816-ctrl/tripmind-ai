@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 const SYSTEM_PROMPT = `You are Sarah, a friendly Personal Travel Manager at TripMind AI with 10+ years of experience.
 
@@ -86,44 +87,55 @@ export async function POST(req: NextRequest) {
     const readyToGenerate = reply.includes('READY_TO_GENERATE');
     reply = reply.replace('READY_TO_GENERATE', '').trim();
 
-    // Merge lead data — never overwrite existing values with empty
+    // Merge lead data
     const mergedLead: any = { ...leadData };
     for (const [k, v] of Object.entries(extractedLead)) {
       if (v && v !== '') mergedLead[k] = v;
     }
 
-    // Save lead directly via Prisma instead of HTTP fetch
-if (mergedLead.email) {
-  try {
-    const { prisma } = await import('@/lib/prisma');
-    const resolvedDates = mergedLead.dates || 
-      (mergedLead.startDate && mergedLead.endDate 
-        ? `${mergedLead.startDate} to ${mergedLead.endDate}` 
-        : mergedLead.startDate || '');
-    await prisma.lead.upsert({
-      where: { email: mergedLead.email },
-      update: {
-        name: mergedLead.name || undefined,
-        phone: mergedLead.phone || undefined,
-        destination: mergedLead.destination || undefined,
-        dates: resolvedDates || undefined,
-        travelers: mergedLead.travelers || undefined,
-        budget: mergedLead.budget || undefined,
-        interests: mergedLead.interests || undefined,
-        updatedAt: new Date(),
-      },
-      create: {
-        email: mergedLead.email,
-        name: mergedLead.name || '',
-        phone: mergedLead.phone || '',
-        destination: mergedLead.destination || '',
-        dates: resolvedDates || '',
-        travelers: mergedLead.travelers || '',
-        budget: mergedLead.budget || '',
-        interests: mergedLead.interests || '',
-      },
-    });
-  } catch (e) {
-    console.error('Save lead failed:', e);
+    // Save lead directly via Prisma
+    if (mergedLead.email) {
+      try {
+        const resolvedDates = mergedLead.dates ||
+          (mergedLead.startDate && mergedLead.endDate
+            ? `${mergedLead.startDate} to ${mergedLead.endDate}`
+            : mergedLead.startDate || '');
+        await prisma.lead.upsert({
+          where: { email: mergedLead.email },
+          update: {
+            name: mergedLead.name || undefined,
+            phone: mergedLead.phone || undefined,
+            destination: mergedLead.destination || undefined,
+            dates: resolvedDates || undefined,
+            travelers: mergedLead.travelers || undefined,
+            budget: mergedLead.budget || undefined,
+            interests: mergedLead.interests || undefined,
+            updatedAt: new Date(),
+          },
+          create: {
+            email: mergedLead.email,
+            name: mergedLead.name || '',
+            phone: mergedLead.phone || '',
+            destination: mergedLead.destination || '',
+            dates: resolvedDates || '',
+            travelers: mergedLead.travelers || '',
+            budget: mergedLead.budget || '',
+            interests: mergedLead.interests || '',
+          },
+        });
+      } catch (e) {
+        console.error('Save lead failed:', e);
+      }
+    }
+
+    return NextResponse.json({ reply, leadData: mergedLead, readyToGenerate });
+
+  } catch (error: any) {
+    console.error('Agent error:', error);
+    return NextResponse.json({
+      reply: "Sorry about that! Could you repeat what you said?",
+      leadData: {},
+      readyToGenerate: false
+    }, { status: 500 });
   }
 }
