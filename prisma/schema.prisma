@@ -35,6 +35,11 @@ enum LeadSource {
   IMPORT
 }
 
+enum UsageAction {
+  ITINERARY
+  AGENT_MESSAGE
+}
+
 model User {
   id               String    @id
   email            String    @unique
@@ -50,6 +55,7 @@ model User {
 
   subscriptions    Subscription[]
   trips            Trip[]
+  usageRecords     UsageRecord[]
 
   @@index([email])
   @@index([stripeCustomerId])
@@ -79,6 +85,20 @@ model Subscription {
   @@index([userId, status])
   @@index([stripeCustomerId])
   @@index([currentPeriodEnd])
+}
+
+model UsageRecord {
+  id        String      @id @default(cuid())
+  userId    String
+  action    UsageAction
+  periodKey String
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, action, periodKey])
+  @@index([userId, createdAt])
 }
 
 model Trip {

@@ -5,6 +5,9 @@ import { handleApiError } from "@/lib/api-error";
 import { parseJsonBody } from "@/lib/validate";
 import { agentBodySchema } from "@/lib/schemas/api";
 import { applyRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { auth } from "@clerk/nextjs/server";
+import { recordUsage } from "@/lib/db/usage";
+import { UsageAction } from "@prisma/client";
 
 const SYSTEM_PROMPT = `You are Sarah, a friendly Personal Travel Manager at TripMind AI with 10+ years of experience.
 
@@ -101,6 +104,15 @@ export async function POST(req: NextRequest) {
     const mergedLead: Record<string, string> = { ...leadData };
     for (const [k, v] of Object.entries(extractedLead)) {
       if (v && v !== "") mergedLead[k] = v;
+    }
+
+    const { userId } = await auth();
+    if (userId) {
+      try {
+        await recordUsage(userId, UsageAction.AGENT_MESSAGE);
+      } catch (e) {
+        console.error("Record agent usage failed:", e);
+      }
     }
 
     if (mergedLead.email) {

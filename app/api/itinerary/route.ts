@@ -6,6 +6,8 @@ import { itineraryBodySchema } from "@/lib/schemas/api";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { ApiError, handleApiError } from "@/lib/api-error";
 import { applyRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { checkUsageLimit, recordUsage } from "@/lib/db/usage";
+import { UsageAction } from "@prisma/client";
 
 async function getCountryInfo(country: string) {
   try {
@@ -72,6 +74,15 @@ export async function POST(req: NextRequest) {
     if (rateLimitResponse) return rateLimitResponse;
 
     const { userId } = authResult;
+
+    const allowed = await checkUsageLimit(userId, UsageAction.ITINERARY);
+    if (!allowed) {
+      return apiError(
+        "You have reached your monthly itinerary limit. Upgrade to Pro for unlimited itineraries.",
+        429
+      );
+    }
+
     const { destination, country, cities, startDate, endDate, budget, interests } =
       await parseJsonBody(req, itineraryBodySchema);
 
@@ -202,6 +213,11 @@ Return ONLY a valid JSON object, no markdown, no extra text:
         interests: interests || "",
         itinerary: JSON.stringify(itinerary),
       },
+    });
+
+    await recordUsage(userId, UsageAction.ITINERARY, {
+      tripId: trip.id,
+      destination,
     });
 
     return apiSuccess({ tripId: trip.id, itinerary });
