@@ -25,6 +25,7 @@ export const agentBodySchema = z.object({
     })
     .optional()
     .default({}),
+  conversationId: z.string().optional(),
 });
 
 export const checkoutBodySchema = z.object({

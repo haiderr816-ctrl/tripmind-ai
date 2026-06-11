@@ -7,6 +7,11 @@ import { agentBodySchema } from "@/lib/schemas/api";
 import { applyRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { auth } from "@clerk/nextjs/server";
 import { recordUsage } from "@/lib/db/usage";
+import {
+  addMessage,
+  createConversation,
+  getConversation,
+} from "@/lib/db/conversation";
 import { UsageAction } from "@prisma/client";
 
 const SYSTEM_PROMPT = `You are Sarah, a friendly Personal Travel Manager at TripMind AI with 10+ years of experience.
@@ -64,7 +69,31 @@ export async function POST(req: NextRequest) {
   if (rateLimitResponse) return rateLimitResponse;
 
   try {
-    const { messages, leadData } = await parseJsonBody(req, agentBodySchema);
+    const { messages, leadData, conversationId: incomingConversationId } =
+      await parseJsonBody(req, agentBodySchema);
+
+    const { userId } = await auth();
+
+    let conversationId = incomingConversationId;
+    if (conversationId) {
+      const existing = await getConversation(conversationId);
+      if (!existing) {
+        conversationId = undefined;
+      }
+    }
+    if (!conversationId) {
+      const conversation = await createConversation(userId ?? undefined);
+      conversationId = conversation.id;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.role === "user") {
+      try {
+        await addMessage(conversationId, lastMessage.role, lastMessage.content);
+      } catch (e) {
+        console.error("Save user message failed:", e);
+      }
+    }
 
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -106,13 +135,18 @@ export async function POST(req: NextRequest) {
       if (v && v !== "") mergedLead[k] = v;
     }
 
-    const { userId } = await auth();
     if (userId) {
       try {
         await recordUsage(userId, UsageAction.AGENT_MESSAGE);
       } catch (e) {
         console.error("Record agent usage failed:", e);
       }
+    }
+
+    try {
+      await addMessage(conversationId, "assistant", reply);
+    } catch (e) {
+      console.error("Save assistant message failed:", e);
     }
 
     if (mergedLead.email) {
@@ -122,7 +156,7 @@ export async function POST(req: NextRequest) {
           (mergedLead.startDate && mergedLead.endDate
             ? `${mergedLead.startDate} to ${mergedLead.endDate}`
             : mergedLead.startDate || "");
-        await prisma.lead.upsert({
+        const lead = await prisma.lead.upsert({
           where: { email: mergedLead.email },
           update: {
             name: mergedLead.name || undefined,
@@ -145,12 +179,28 @@ export async function POST(req: NextRequest) {
             interests: mergedLead.interests || "",
           },
         });
+        try {
+          await prisma.conversation.update({
+            where: { id: conversationId },
+            data: {
+              leadId: lead.id,
+              ...(userId ? { userId } : {}),
+            },
+          });
+        } catch (e) {
+          console.error("Link lead to conversation failed:", e);
+        }
       } catch (e) {
         console.error("Save lead failed:", e);
       }
     }
 
-    return NextResponse.json({ reply, leadData: mergedLead, readyToGenerate });
+    return NextResponse.json({
+      reply,
+      leadData: mergedLead,
+      readyToGenerate,
+      conversationId,
+    });
   } catch (error) {
     console.error("Agent error:", error);
     if (error instanceof ZodError) {
