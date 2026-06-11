@@ -1,5 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { forbidden, unauthorized } from "@/lib/api-response";
+import { upsertUser } from "@/lib/db/user";
 
 export function getAdminEmail(): string {
   return process.env.ADMIN_EMAIL ?? "";
@@ -11,6 +12,21 @@ export async function requireAuth() {
     return { error: unauthorized() } as const;
   }
   return { userId } as const;
+}
+
+export async function requireUser() {
+  const authResult = await requireAuth();
+  if ("error" in authResult) {
+    return authResult;
+  }
+
+  const clerkUser = await currentUser();
+  if (!clerkUser) {
+    return { error: unauthorized() } as const;
+  }
+
+  const user = await upsertUser(clerkUser);
+  return { userId: authResult.userId, user, clerkUser } as const;
 }
 
 export async function checkIsAdmin(): Promise<boolean> {
