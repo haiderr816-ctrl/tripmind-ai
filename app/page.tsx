@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { FadeUp } from "@/components/motion/FadeUp";
+import { PageTransition } from "@/components/motion/PageTransition";
+import { HoverCard } from "@/components/motion/HoverCard";
 
 export default function Home() {
   const { isSignedIn } = useAuth();
@@ -82,63 +85,65 @@ export default function Home() {
       </nav>
 
       {/* HERO Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-surface to-primary">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-3xl animate-pulse delay-1000" />
-        </div>
-        
-        <div className="relative z-10 max-w-5xl mx-auto px-4 text-center pt-20 pb-32">
-          <Badge variant="pro" className="mb-6">
-            <Sparkles size={12} className="mr-2" />
-            AI-Powered Travel Planning
-          </Badge>
-          <h1 className="text-5xl md:text-7xl font-extrabold text-primary-foreground mb-6 leading-tight">
-            Plan Your Perfect Trip<br />
-            with <span className="text-accent">AI</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
-            TripMind AI creates fully personalized itineraries, finds the best deals, and manages your entire journey — all powered by AI.
-          </p>
+      <PageTransition>
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-surface to-primary">
+          <div className="absolute inset-0 opacity-30">
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-3xl animate-pulse delay-1000" />
+          </div>
+          
+          <div className="relative z-10 max-w-5xl mx-auto px-4 text-center pt-20 pb-32">
+            <Badge variant="pro" className="mb-6">
+              <Sparkles size={12} className="mr-2" />
+              AI-Powered Travel Planning
+            </Badge>
+            <h1 className="text-5xl md:text-7xl font-extrabold text-primary-foreground mb-6 leading-tight">
+              Plan Your Perfect Trip<br />
+              with <span className="text-accent">AI</span>
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+              TripMind AI creates fully personalized itineraries, finds the best deals, and manages your entire journey — all powered by AI.
+            </p>
 
-          <Card variant="glass" className="max-w-3xl mx-auto p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-              <input
-                type="text"
-                placeholder="Where to?"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-                className="px-4 py-3 bg-background/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-sm"
-              />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="px-4 py-3 bg-background/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-sm"
-              />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="px-4 py-3 bg-background/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-sm"
-              />
-            </div>
-            <Button
-              variant="accent"
-              size="lg"
-              className="w-full"
-              onClick={() => {
-                if (isSignedIn) router.push(`/dashboard/plan?destination=${encodeURIComponent(destination)}&startDate=${startDate}&endDate=${endDate}`);
-                else router.push("/sign-in");
-              }}
-            >
-              <Sparkles size={18} className="mr-2" />
-              Plan My Trip with AI
-            </Button>
-            <p className="text-xs text-muted-foreground text-center mt-3">Free to start · No credit card required</p>
-          </Card>
-        </div>
-      </section>
+            <Card variant="glass" className="max-w-3xl mx-auto p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                <input
+                  type="text"
+                  placeholder="Where to?"
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="px-4 py-3 bg-background/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-sm"
+                />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="px-4 py-3 bg-background/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-sm"
+                />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="px-4 py-3 bg-background/50 border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent/50 text-sm"
+                />
+              </div>
+              <Button
+                variant="accent"
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  if (isSignedIn) router.push(`/dashboard/plan?destination=${encodeURIComponent(destination)}&startDate=${startDate}&endDate=${endDate}`);
+                  else router.push("/sign-in");
+                }}
+              >
+                <Sparkles size={18} className="mr-2" />
+                Plan My Trip with AI
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-3">Free to start · No credit card required</p>
+            </Card>
+          </div>
+        </section>
+      </PageTransition>
 
       {/* FEATURES GRID */}
       <section id="features" className="py-24 px-4 bg-background">
@@ -158,14 +163,16 @@ export default function Home() {
               { icon: FileText, title: "PDF Export", desc: "Download your complete travel itinerary as a beautifully formatted PDF to share or keep offline." },
               { icon: Plane, title: "Instant Booking", desc: "Get real-time comparisons for flights and hotels within your budget — no more jumping between sites." },
               { icon: Shield, title: "Secure & Private", desc: "Your travel plans and personal information are fully encrypted and private. We never sell your data." },
-            ].map((feature) => (
-              <Card key={feature.title} variant="glass" className="p-6 hover:shadow-lg transition cursor-pointer">
-                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-4">
-                  <feature.icon size={24} className="text-accent" />
-                </div>
-                <h3 className="text-lg font-bold text-primary mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
-              </Card>
+            ].map((feature, index) => (
+              <FadeUp key={feature.title} delay={index * 0.1}>
+                <Card variant="glass" className="p-6 hover:shadow-lg transition cursor-pointer">
+                  <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center mb-4">
+                    <feature.icon size={24} className="text-accent" />
+                  </div>
+                  <h3 className="text-lg font-bold text-primary mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
+                </Card>
+              </FadeUp>
             ))}
           </div>
         </div>
@@ -188,7 +195,7 @@ export default function Home() {
               { name: "London, UK", image: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=2670", price: "From $699", tag: "History" },
               { name: "New York, USA", image: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?q=80&w=2670", price: "From $399", tag: "City Life" },
             ].map((place) => (
-              <Card key={place.name} variant="default" className="overflow-hidden group cursor-pointer hover:shadow-xl transition">
+              <HoverCard key={place.name} variant="default" className="overflow-hidden group cursor-pointer">
                 <div className="relative h-48 overflow-hidden">
                   <img
                     src={place.image}
@@ -201,7 +208,7 @@ export default function Home() {
                   <h3 className="text-lg font-bold text-primary mb-1">{place.name}</h3>
                   <p className="text-muted-foreground text-sm">{place.price}</p>
                 </CardContent>
-              </Card>
+              </HoverCard>
             ))}
           </div>
         </div>
