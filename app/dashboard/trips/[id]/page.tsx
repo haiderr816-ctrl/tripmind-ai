@@ -81,7 +81,7 @@ export default function TripDetailPage() {
 
         <div className="relative rounded-3xl overflow-hidden h-64 mb-6 shadow-xl">
           {heroPhoto ? (
-            <img src={heroPhoto} alt={trip.destination} className="w-full h-full object-cover" />
+            <img src={heroPhoto} alt={trip.destination} className="w-full h-full object-cover" loading="lazy" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-violet-400 to-pink-400 animate-pulse" />
           )}
@@ -227,7 +227,7 @@ export default function TripDetailPage() {
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
             <div className="relative h-48 overflow-hidden">
               {dayPhotos[activeDay] ? (
-                <img src={dayPhotos[activeDay]} alt={days[activeDay].title} className="w-full h-full object-cover transition-all duration-500" />
+                <img src={dayPhotos[activeDay]} alt={days[activeDay].title} className="w-full h-full object-cover transition-all duration-500" loading="lazy" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-violet-100 to-pink-100 animate-pulse" />
               )}

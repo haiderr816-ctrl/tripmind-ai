@@ -24,7 +24,7 @@ function TripCard({ trip, onDelete }: { trip: any, onDelete: (id: string) => voi
       <div className="relative h-44 bg-gradient-to-br from-accent to-accent/70 overflow-hidden cursor-pointer"
         onClick={() => router.push('/dashboard/trips/' + trip.id)}>
         {photo ? (
-          <img src={photo} alt={trip.destination} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
+          <img src={photo} alt={trip.destination} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy" />
         ) : (
           <div className="w-full h-full bg-gradient-to-br from-accent/50 to-accent/30 animate-pulse" />
         )}

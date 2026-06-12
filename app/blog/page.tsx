@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Calendar, Clock, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -83,7 +84,13 @@ export default function BlogPage() {
               <Link href={`/blog/${post.slug}`}>
                 <HoverCard variant="default" className="overflow-hidden group cursor-pointer h-full">
                   <div className="relative overflow-hidden">
-                    <img src={post.image} alt={post.title} className="w-full h-48 object-cover group-hover:scale-105 transition duration-500" />
+                    <Image
+                      src={post.image}
+                      alt={post.title}
+                      width={1200}
+                      height={630}
+                      className="w-full h-48 object-cover group-hover:scale-105 transition duration-500"
+                    />
                   </div>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">

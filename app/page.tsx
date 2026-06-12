@@ -231,9 +231,11 @@ export default function Home() {
             ].map((place) => (
               <HoverCard key={place.name} variant="default" className="overflow-hidden group cursor-pointer">
                 <div className="relative h-48 overflow-hidden">
-                  <img
+                  <Image
                     src={place.image}
                     alt={place.name}
+                    width={2670}
+                    height={1600}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                   />
                   <Badge variant="pro" className="absolute top-3 left-3">{place.tag}</Badge>

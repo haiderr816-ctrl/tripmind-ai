@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Sparkles, ArrowRight, Calendar, MapPin, Plane, Check, Sun, CloudRain, Thermometer, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -165,9 +166,11 @@ export default async function DestinationPage({ params }: { params: Promise<{ sl
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="relative h-[60vh] overflow-hidden">
-        <img
+        <Image
           src={destination.image}
           alt={destination.name}
+          width={2670}
+          height={1600}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-primary/30" />

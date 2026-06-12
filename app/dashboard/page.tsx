@@ -114,7 +114,7 @@ export default function DashboardPage() {
               {upcomingTrip ? (
                 <div className="relative rounded-3xl overflow-hidden h-72 shadow-xl">
                   {heroPhoto ? (
-                    <img src={heroPhoto} alt={upcomingTrip.destination} className="w-full h-full object-cover" />
+                    <img src={heroPhoto} alt={upcomingTrip.destination} className="w-full h-full object-cover" loading="lazy" />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-violet-400 to-pink-400 animate-pulse" />
                   )}

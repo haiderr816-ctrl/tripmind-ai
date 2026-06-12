@@ -1,11 +1,21 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import Script from "next/script";
+import dynamic from "next/dynamic";
 import TravelAgent from "@/components/TravelAgent";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
+
+const ExitIntent = dynamic(() => import("@/components/ui/ExitIntent"));
+const StickyCtA = dynamic(() => import("@/components/ui/StickyCtA"));
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#7C3AED",
+};
 
 export const metadata: Metadata = {
   title: "TripMind AI — Plan Your Perfect Trip with AI",
@@ -77,6 +87,8 @@ export default function RootLayout({
         <body className={plusJakarta.className}>
           {children}
           <TravelAgent />
+          <ExitIntent />
+          <StickyCtA />
         </body>
       </html>
     </ClerkProvider>

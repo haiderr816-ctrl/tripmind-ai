@@ -57,7 +57,7 @@ export default function ComparePage() {
         <div className="grid grid-cols-3 gap-6 mb-8">
           {destinations.map((d, i) => (
             <div key={i} className="rounded-2xl overflow-hidden shadow-md border border-gray-100 text-center">
-              <img src={d.image} alt={d.name} className="w-full h-40 object-cover" />
+              <img src={d.image} alt={d.name} className="w-full h-40 object-cover" loading="lazy" />
               <div className="p-4">
                 <h3 className="text-xl font-bold text-gray-900">{d.name}</h3>
                 <p className="text-2xl font-bold text-indigo-600 mt-1">{d.price}</p>

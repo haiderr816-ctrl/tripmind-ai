@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Calendar, Clock, ArrowRight, Sparkles, MapPin, Check, Plane, DollarSign, Sun, CloudRain, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -197,9 +198,11 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="relative h-[50vh] overflow-hidden">
-        <img
+        <Image
           src={post.image}
           alt={post.title}
+          width={1200}
+          height={630}
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-primary/30" />
