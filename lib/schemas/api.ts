@@ -21,7 +21,7 @@ export const agentBodySchema = z.object({
       dates: z.string().optional(),
       travelers: z.string().optional(),
       budget: z.string().optional(),
-      interests: z.string().optional(),
+      interests: z.union([z.string(), z.array(z.string())]).optional(),
     })
     .optional()
     .default({}),

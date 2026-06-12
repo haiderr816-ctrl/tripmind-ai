@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
     let reply =
       data.choices?.[0]?.message?.content || "Sorry, could you repeat that?";
 
-    let extractedLead: Record<string, string> = {};
+    let extractedLead: Record<string, string | string[]> = {};
     const leadMatch = reply.match(/LEAD_DATA:(\{[^}]+\})/);
     if (leadMatch) {
       try {
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
     const readyToGenerate = reply.includes("READY_TO_GENERATE");
     reply = reply.replace("READY_TO_GENERATE", "").trim();
 
-    const mergedLead: Record<string, string> = { ...leadData };
+    const mergedLead: Record<string, string | string[]> = { ...leadData };
     for (const [k, v] of Object.entries(extractedLead)) {
       if (v && v !== "") mergedLead[k] = v;
     }
@@ -183,31 +183,37 @@ export async function POST(req: NextRequest) {
     if (mergedLead.email) {
       try {
         const resolvedDates =
-          mergedLead.dates ||
-          (mergedLead.startDate && mergedLead.endDate
+          (typeof mergedLead.dates === 'string' && mergedLead.dates) ||
+          (typeof mergedLead.startDate === 'string' && typeof mergedLead.endDate === 'string'
             ? `${mergedLead.startDate} to ${mergedLead.endDate}`
-            : mergedLead.startDate || "");
+            : typeof mergedLead.startDate === 'string' ? mergedLead.startDate : "");
+        
+        // Convert interests array to string for database storage
+        const interestsValue = Array.isArray(mergedLead.interests)
+          ? mergedLead.interests.join(", ")
+          : mergedLead.interests || "";
+        
         const lead = await prisma.lead.upsert({
-          where: { email: mergedLead.email },
+          where: { email: mergedLead.email as string },
           update: {
-            name: mergedLead.name || undefined,
-            phone: mergedLead.phone || undefined,
-            destination: mergedLead.destination || undefined,
+            name: typeof mergedLead.name === 'string' ? mergedLead.name : undefined,
+            phone: typeof mergedLead.phone === 'string' ? mergedLead.phone : undefined,
+            destination: typeof mergedLead.destination === 'string' ? mergedLead.destination : undefined,
             dates: resolvedDates || undefined,
-            travelers: mergedLead.travelers || undefined,
-            budget: mergedLead.budget || undefined,
-            interests: mergedLead.interests || undefined,
+            travelers: typeof mergedLead.travelers === 'string' ? mergedLead.travelers : undefined,
+            budget: typeof mergedLead.budget === 'string' ? mergedLead.budget : undefined,
+            interests: interestsValue || undefined,
             updatedAt: new Date(),
           },
           create: {
-            email: mergedLead.email,
-            name: mergedLead.name || "",
-            phone: mergedLead.phone || "",
-            destination: mergedLead.destination || "",
+            email: mergedLead.email as string,
+            name: typeof mergedLead.name === 'string' ? mergedLead.name : "",
+            phone: typeof mergedLead.phone === 'string' ? mergedLead.phone : "",
+            destination: typeof mergedLead.destination === 'string' ? mergedLead.destination : "",
             dates: resolvedDates || "",
-            travelers: mergedLead.travelers || "",
-            budget: mergedLead.budget || "",
-            interests: mergedLead.interests || "",
+            travelers: typeof mergedLead.travelers === 'string' ? mergedLead.travelers : "",
+            budget: typeof mergedLead.budget === 'string' ? mergedLead.budget : "",
+            interests: interestsValue,
           },
         });
         try {
