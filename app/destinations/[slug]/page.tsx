@@ -1,10 +1,12 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { Sparkles, ArrowRight, Calendar, MapPin, Plane, Check, Sun, CloudRain, Thermometer } from 'lucide-react';
+import { Sparkles, ArrowRight, Calendar, MapPin, Plane, Check, Sun, CloudRain, Thermometer, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { FadeUp } from '@/components/motion/FadeUp';
+import DestinationConsultationForm from './DestinationConsultationForm';
 
 const destinations: Record<string, any> = {
   'dubai': {
@@ -236,6 +238,10 @@ export default async function DestinationPage({ params }: { params: Promise<{ sl
               </Button>
             </Link>
           </Card>
+        </FadeUp>
+
+        <FadeUp delay={0.5}>
+          <DestinationConsultationForm destination={destination.name} />
         </FadeUp>
       </section>
     </div>

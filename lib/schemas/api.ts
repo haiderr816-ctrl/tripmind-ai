@@ -69,6 +69,10 @@ export const saveLeadBodySchema = z.object({
   travelers: z.string().optional(),
   budget: z.string().optional(),
   interests: z.string().optional(),
+  utm_source: z.string().optional(),
+  utm_medium: z.string().optional(),
+  utm_campaign: z.string().optional(),
+  source: z.string().optional(),
 });
 
 export const saveTripBodySchema = z.object({

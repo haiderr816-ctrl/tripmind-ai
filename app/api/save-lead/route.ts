@@ -19,11 +19,37 @@ export async function POST(req: NextRequest) {
       travelers,
       budget,
       interests,
+      utm_source,
+      utm_medium,
+      utm_campaign,
+      source,
     } = body;
 
     const resolvedDates =
       dates ||
       (startDate && endDate ? `${startDate} to ${endDate}` : startDate || "");
+
+    // Build interests object with UTM tracking
+    let interestsObj: any = {};
+    if (interests) {
+      try {
+        interestsObj = typeof interests === 'string' ? JSON.parse(interests) : interests;
+      } catch {
+        interestsObj = { value: interests };
+      }
+    }
+
+    // Add UTM tracking to interests
+    if (utm_source || utm_medium || utm_campaign || source) {
+      interestsObj.utm = {
+        ...(utm_source && { source: utm_source }),
+        ...(utm_medium && { medium: utm_medium }),
+        ...(utm_campaign && { campaign: utm_campaign }),
+        ...(source && { customSource: source }),
+      };
+    }
+
+    const interestsString = Object.keys(interestsObj).length > 0 ? JSON.stringify(interestsObj) : interests || "";
 
     await prisma.lead.upsert({
       where: { email },
@@ -34,7 +60,7 @@ export async function POST(req: NextRequest) {
         dates: resolvedDates || undefined,
         travelers: travelers || undefined,
         budget: budget || undefined,
-        interests: interests || undefined,
+        interests: interestsString || undefined,
         updatedAt: new Date(),
       },
       create: {
@@ -45,7 +71,7 @@ export async function POST(req: NextRequest) {
         dates: resolvedDates || "",
         travelers: travelers || "",
         budget: budget || "",
-        interests: interests || "",
+        interests: interestsString || "",
       },
     });
 

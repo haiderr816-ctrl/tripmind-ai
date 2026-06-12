@@ -1,10 +1,12 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { Calendar, Clock, ArrowRight, Sparkles, MapPin, Check, Plane, DollarSign, Sun, CloudRain } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Sparkles, MapPin, Check, Plane, DollarSign, Sun, CloudRain, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { FadeUp } from '@/components/motion/FadeUp';
+import BlogNewsletterSignup from './BlogNewsletterSignup';
 
 const blogPosts: Record<string, any> = {
   'best-time-to-visit-dubai': {
@@ -235,6 +237,10 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               <Badge key={tag} variant="info">{tag}</Badge>
             ))}
           </div>
+        </FadeUp>
+
+        <FadeUp delay={0.35}>
+          <BlogNewsletterSignup />
         </FadeUp>
 
         <FadeUp delay={0.4}>
