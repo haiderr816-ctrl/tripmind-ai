@@ -3,6 +3,11 @@
 import * as XLSX from 'xlsx';
 import { useEffect, useState } from 'react';
 import { Users, Mail, Phone, MapPin, Calendar, DollarSign, Search, Download } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { FadeUp } from '@/components/motion/FadeUp';
 
 type LeadsPageClientProps = {
   isAdmin: boolean;
@@ -22,10 +27,10 @@ export function LeadsPageClient({ isAdmin }: LeadsPageClientProps) {
   }, [isAdmin]);
 
   if (!isAdmin) return (
-    <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center">
-      <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
-        <p className="text-[#64748b]">Access denied. Admin only.</p>
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <Card variant="default" className="p-8 text-center">
+        <p className="text-muted-foreground">Access denied. Admin only.</p>
+      </Card>
     </div>
   );
 
@@ -75,29 +80,27 @@ export function LeadsPageClient({ isAdmin }: LeadsPageClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
+    <div className="min-h-screen bg-background p-6 lg:p-8">
 
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-violet-600 to-pink-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-200">
+          <div className="w-10 h-10 bg-accent rounded-2xl flex items-center justify-center shadow-lg shadow-accent/30">
             <Users size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-[#0f172a]">Travel Leads</h1>
-            <p className="text-[#64748b] text-sm">Everyone who chatted with Sarah</p>
+            <h1 className="text-3xl font-bold text-primary">Travel Leads</h1>
+            <p className="text-muted-foreground text-sm">Everyone who chatted with Sarah</p>
           </div>
         </div>
         {leads.length > 0 && (
           <div className="flex gap-2">
-            <button onClick={exportCSV}
-              className="flex items-center gap-2 bg-white border border-gray-200 text-[#64748b] px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-violet-300 hover:text-violet-600 transition shadow-sm">
-              <Download size={15} /> CSV
-            </button>
-            <button onClick={exportExcel}
-              className="flex items-center gap-2 bg-white border border-gray-200 text-[#64748b] px-4 py-2.5 rounded-xl text-sm font-semibold hover:border-green-300 hover:text-green-600 transition shadow-sm">
-              <Download size={15} /> Excel
-            </button>
+            <Button variant="secondary" onClick={exportCSV}>
+              <Download size={15} className="mr-2" /> CSV
+            </Button>
+            <Button variant="secondary" onClick={exportExcel}>
+              <Download size={15} className="mr-2" /> Excel
+            </Button>
           </div>
         )}
       </div>
@@ -108,101 +111,106 @@ export function LeadsPageClient({ isAdmin }: LeadsPageClientProps) {
           { label: 'Total Leads', value: leads.length, icon: Users },
           { label: 'With Phone', value: leads.filter(l => l.phone).length, icon: Phone },
           { label: 'Destinations', value: new Set(leads.map(l => l.destination?.split(',').pop()?.trim()).filter(Boolean)).size, icon: MapPin },
-        ].map(stat => (
-          <div key={stat.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[#64748b] text-sm font-medium">{stat.label}</span>
-              <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center">
-                <stat.icon size={18} className="text-violet-600" />
+        ].map((stat, index) => (
+          <FadeUp key={stat.label} delay={index * 0.05}>
+            <Card variant="default" className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-muted-foreground text-sm font-medium">{stat.label}</span>
+                <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                  <stat.icon size={18} className="text-accent" />
+                </div>
               </div>
-            </div>
-            <div className="text-2xl font-bold text-[#0f172a]">{stat.value}</div>
-          </div>
+              <div className="text-2xl font-bold text-primary">{stat.value}</div>
+            </Card>
+          </FadeUp>
         ))}
       </div>
 
       {/* Search */}
       <div className="relative mb-4">
-        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input value={search} onChange={e => setSearch(e.target.value)}
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input 
+          value={search} 
+          onChange={e => setSearch(e.target.value)}
           placeholder="Search by name, email or destination..."
-          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 shadow-sm" />
+          className="pl-10"
+        />
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-violet-600 to-pink-600" />
+      <Card variant="default" className="overflow-hidden">
+        <div className="h-1 bg-accent" />
 
         {loading ? (
           <div className="p-8 space-y-3">
-            {[1,2,3].map(i => <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />)}
+            {[1,2,3].map(i => <div key={i} className="h-12 bg-surface rounded-xl animate-pulse" />)}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16">
-            <Users size={40} className="text-gray-300 mx-auto mb-3" />
-            <p className="text-[#64748b] font-medium">No leads yet</p>
-            <p className="text-xs text-gray-400 mt-1">Leads appear when visitors chat with Sarah and share their email</p>
+            <Users size={40} className="text-muted-foreground/30 mx-auto mb-3" />
+            <p className="text-muted-foreground font-medium">No leads yet</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Leads appear when visitors chat with Sarah and share their email</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Contact</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Phone</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Destination</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Dates</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Stay</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Budget</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Interests</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-[#64748b] uppercase tracking-wide">Added</th>
+                <tr className="border-b border-border bg-surface">
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Contact</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Phone</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Destination</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Dates</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Stay</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Budget</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Interests</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Added</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-border">
                 {filtered.map((lead, i) => (
-                  <tr key={i} className="hover:bg-violet-50 transition">
+                  <tr key={i} className="hover:bg-accent/5 transition">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-pink-500 rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
+                        <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-white font-bold text-xs shrink-0">
                           {(lead.name?.[0] || lead.email?.[0] || '?').toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-semibold text-[#0f172a]">{lead.name || 'Anonymous'}</p>
-                          <p className="text-xs text-[#64748b] flex items-center gap-1"><Mail size={10} /> {lead.email}</p>
+                          <p className="font-semibold text-primary">{lead.name || 'Anonymous'}</p>
+                          <p className="text-xs text-muted-foreground flex items-center gap-1"><Mail size={10} /> {lead.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-[#64748b]">
+                    <td className="px-5 py-4 text-muted-foreground">
                       {lead.phone ? (
                         <span className="flex items-center gap-1"><Phone size={12} /> {lead.phone}</span>
-                      ) : <span className="text-gray-300">—</span>}
+                      ) : <span className="text-muted-foreground/30">—</span>}
                     </td>
                     <td className="px-5 py-4">
                       {lead.destination ? (
-                        <span className="flex items-center gap-1 text-violet-700 font-medium"><MapPin size={12} /> {lead.destination}</span>
-                      ) : <span className="text-gray-300">—</span>}
+                        <span className="flex items-center gap-1 text-accent font-medium"><MapPin size={12} /> {lead.destination}</span>
+                      ) : <span className="text-muted-foreground/30">—</span>}
                     </td>
-                    <td className="px-5 py-4 text-[#64748b]">
+                    <td className="px-5 py-4 text-muted-foreground">
                       {lead.dates ? (
                         <span className="flex items-center gap-1"><Calendar size={12} /> {lead.dates}</span>
-                      ) : <span className="text-gray-300">—</span>}
+                      ) : <span className="text-muted-foreground/30">—</span>}
                     </td>
                     <td className="px-5 py-4">
-                      <span className="bg-blue-50 text-blue-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                      <Badge variant="info">
                         {calcDays(lead.dates)}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-5 py-4">
                       {lead.budget ? (
-                        <span className="bg-green-50 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 w-fit">
+                        <Badge variant="success" className="flex items-center gap-1 w-fit">
                           <DollarSign size={10} /> {lead.budget}
-                        </span>
-                      ) : <span className="text-gray-300">—</span>}
+                        </Badge>
+                      ) : <span className="text-muted-foreground/30">—</span>}
                     </td>
-                    <td className="px-5 py-4 text-[#64748b] text-xs max-w-[150px] truncate">
-                      {lead.interests || <span className="text-gray-300">—</span>}
+                    <td className="px-5 py-4 text-muted-foreground text-xs max-w-[150px] truncate">
+                      {lead.interests || <span className="text-muted-foreground/30">—</span>}
                     </td>
-                    <td className="px-5 py-4 text-xs text-gray-400">
+                    <td className="px-5 py-4 text-xs text-muted-foreground/60">
                       {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                     </td>
                   </tr>
@@ -211,8 +219,8 @@ export function LeadsPageClient({ isAdmin }: LeadsPageClientProps) {
             </table>
           </div>
         )}
-      </div>
-      <p className="text-center text-xs text-[#64748b] mt-4">Showing {filtered.length} of {leads.length} leads</p>
+      </Card>
+      <p className="text-center text-xs text-muted-foreground mt-4">Showing {filtered.length} of {leads.length} leads</p>
     </div>
   );
 }

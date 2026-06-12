@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, ArrowRight, Plus, Sparkles, Clock, Trash2 } from 'lucide-react';
 import Link from 'next/link';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { FadeUp } from '@/components/motion/FadeUp';
 
 function TripCard({ trip, onDelete }: { trip: any, onDelete: (id: string) => void }) {
   const [photo, setPhoto] = useState('');
@@ -16,50 +20,50 @@ function TripCard({ trip, onDelete }: { trip: any, onDelete: (id: string) => voi
   }, [trip.destination]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-violet-100 transition group overflow-hidden">
-      <div className="relative h-44 bg-gradient-to-br from-violet-500 to-pink-500 overflow-hidden cursor-pointer"
+    <Card variant="default" className="overflow-hidden group hover:shadow-md transition">
+      <div className="relative h-44 bg-gradient-to-br from-accent to-accent/70 overflow-hidden cursor-pointer"
         onClick={() => router.push('/dashboard/trips/' + trip.id)}>
         {photo ? (
           <img src={photo} alt={trip.destination} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-violet-400 to-pink-400 animate-pulse" />
+          <div className="w-full h-full bg-gradient-to-br from-accent/50 to-accent/30 animate-pulse" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-3 left-3">
           <h3 className="text-white font-bold text-lg capitalize">{trip.destination}</h3>
         </div>
-        <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-xl px-2.5 py-1 text-white text-xs font-semibold capitalize">
-          {trip.budget}
+        <div className="absolute top-3 right-3">
+          <Badge variant="pro" className="capitalize">{trip.budget}</Badge>
         </div>
       </div>
 
       <div className="p-4">
         <div className="flex items-center gap-4 mb-4">
-          <div className="flex items-center gap-1.5 text-xs text-[#64748b]">
-            <Calendar size={13} className="text-violet-400" /> {trip.startDate}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Calendar size={13} className="text-accent" /> {trip.startDate}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-[#64748b]">
-            <Clock size={13} className="text-pink-400" /> {trip.endDate}
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Clock size={13} className="text-accent" /> {trip.endDate}
           </div>
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5">
-            <Sparkles size={13} className="text-violet-400" />
-            <span className="text-xs text-violet-600 font-semibold">AI Generated</span>
+            <Sparkles size={13} className="text-accent" />
+            <span className="text-xs text-accent font-semibold">AI Generated</span>
           </div>
           <div className="flex items-center gap-3">
             <button onClick={() => onDelete(trip.id)}
-              className="text-gray-300 hover:text-red-400 transition p-1">
+              className="text-muted-foreground hover:text-destructive transition p-1">
               <Trash2 size={15} />
             </button>
             <button onClick={() => router.push('/dashboard/trips/' + trip.id)}
-              className="flex items-center gap-1 text-xs font-semibold text-violet-600 hover:gap-2 transition-all">
+              className="flex items-center gap-1 text-xs font-semibold text-accent hover:gap-2 transition-all">
               View <ArrowRight size={13} />
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -81,40 +85,42 @@ export default function TripsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-8">
+    <div className="min-h-screen bg-background p-6 lg:p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-[#0f172a] mb-1">My Trips 🗺️</h1>
-          <p className="text-[#64748b]">{trips.length} saved {trips.length === 1 ? 'itinerary' : 'itineraries'}</p>
+          <h1 className="text-3xl font-bold text-primary mb-1">My Trips</h1>
+          <p className="text-muted-foreground">{trips.length} saved {trips.length === 1 ? 'itinerary' : 'itineraries'}</p>
         </div>
         <Link href="/dashboard/plan">
-          <button className="flex items-center gap-2 bg-gradient-to-r from-violet-600 to-pink-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:opacity-90 transition shadow-lg shadow-violet-200">
-            <Plus size={16} /> Plan New Trip
-          </button>
+          <Button variant="accent" size="lg">
+            <Plus size={16} className="mr-2" /> Plan New Trip
+          </Button>
         </Link>
       </div>
 
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1,2,3].map(i => <div key={i} className="h-56 bg-white rounded-2xl animate-pulse border border-gray-100" />)}
+          {[1,2,3].map(i => <div key={i} className="h-56 bg-surface rounded-2xl animate-pulse border border-border" />)}
         </div>
       ) : trips.length === 0 ? (
-        <div className="bg-white rounded-3xl p-16 shadow-sm border border-gray-100 text-center">
-          <div className="w-20 h-20 bg-gradient-to-br from-violet-100 to-pink-100 rounded-3xl flex items-center justify-center mx-auto mb-5">
+        <Card variant="default" className="p-16 text-center">
+          <div className="w-20 h-20 bg-accent/10 rounded-3xl flex items-center justify-center mx-auto mb-5">
             <span className="text-4xl">🗺️</span>
           </div>
-          <h3 className="text-xl font-bold text-[#0f172a] mb-2">No trips yet</h3>
-          <p className="text-[#64748b] mb-6">Start planning your first AI-powered adventure!</p>
+          <h3 className="text-xl font-bold text-primary mb-2">No trips yet</h3>
+          <p className="text-muted-foreground mb-6">Start planning your first AI-powered adventure!</p>
           <Link href="/dashboard/plan">
-            <button className="bg-gradient-to-r from-violet-600 to-pink-600 text-white px-8 py-3 rounded-xl font-bold hover:opacity-90 transition shadow-lg shadow-violet-200">
-              Plan My First Trip ✈️
-            </button>
+            <Button variant="accent" size="lg">
+              Plan My First Trip
+            </Button>
           </Link>
-        </div>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {trips.map((trip: any) => (
-            <TripCard key={trip.id} trip={trip} onDelete={handleDelete} />
+          {trips.map((trip: any, index) => (
+            <FadeUp key={trip.id} delay={index * 0.05}>
+              <TripCard trip={trip} onDelete={handleDelete} />
+            </FadeUp>
           ))}
         </div>
       )}
