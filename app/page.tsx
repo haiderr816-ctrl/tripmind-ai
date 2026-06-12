@@ -15,6 +15,32 @@ import { FadeUp } from "@/components/motion/FadeUp";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { HoverCard } from "@/components/motion/HoverCard";
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "TripMind AI",
+  url: "https://tripmind-ai-kappa.vercel.app",
+  description: "AI-powered travel planning. Get personalized itineraries in under 30 seconds.",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: "https://tripmind-ai-kappa.vercel.app/search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "TripMind AI",
+  url: "https://tripmind-ai-kappa.vercel.app",
+  logo: "https://tripmind-ai-kappa.vercel.app/logo.png",
+  description: "AI-powered travel planning platform that creates personalized itineraries in seconds.",
+  sameAs: [
+    "https://twitter.com/tripmindai",
+    "https://github.com/haiderr816-ctrl/tripmind-ai"
+  ]
+};
+
 export default function Home() {
   const { isSignedIn } = useAuth();
   const router = useRouter();
@@ -45,6 +71,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

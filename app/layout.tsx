@@ -8,14 +8,17 @@ import "./globals.css";
 const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
 
 export const metadata: Metadata = {
-  title: "TripMind AI — Plan Your Dream Trip in 30 Seconds",
+  title: "TripMind AI — Plan Your Perfect Trip with AI",
   description: "TripMind AI creates fully personalized travel itineraries, finds the best deals, and manages your entire journey — all powered by AI. Free to start.",
-  keywords: "AI travel planner, trip itinerary generator, personalized travel, travel planning AI, automatic itinerary",
+  keywords: "AI travel planner, trip itinerary generator, personalized travel, travel planning AI, automatic itinerary, travel assistant, smart travel",
   authors: [{ name: "TripMind AI" }],
   creator: "TripMind AI",
   metadataBase: new URL("https://tripmind-ai-kappa.vercel.app"),
+  alternates: {
+    canonical: "https://tripmind-ai-kappa.vercel.app",
+  },
   openGraph: {
-    title: "TripMind AI — Plan Your Dream Trip in 30 Seconds",
+    title: "TripMind AI — Plan Your Perfect Trip with AI",
     description: "AI-powered travel planning. Get a full day-by-day itinerary with hotels, flights, food and activities in under 30 seconds.",
     url: "https://tripmind-ai-kappa.vercel.app",
     siteName: "TripMind AI",
@@ -32,7 +35,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "TripMind AI — Plan Your Dream Trip in 30 Seconds",
+    title: "TripMind AI — Plan Your Perfect Trip with AI",
     description: "AI-powered travel planning. Full itinerary with hotels, flights, food and activities in under 30 seconds.",
     images: ["https://images.unsplash.com/photo-1499856871958-5b9357976b82?q=80&w=1200"],
   },
