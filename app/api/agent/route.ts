@@ -95,6 +95,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Check if API key is set
+    if (!process.env.GROQ_API_KEY) {
+      console.error("GROQ_API_KEY is not set in environment variables");
+      return NextResponse.json(
+        {
+          reply: "Sorry, the AI service is not configured properly. Please contact support.",
+          leadData: {},
+          readyToGenerate: false,
+        },
+        { status: 500 }
+      );
+    }
+
     const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -111,6 +124,24 @@ export async function POST(req: NextRequest) {
         max_tokens: 500,
       }),
     });
+
+    // Check if the request was successful
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Groq API error:", {
+        status: res.status,
+        statusText: res.statusText,
+        error: errorText,
+      });
+      return NextResponse.json(
+        {
+          reply: "Sorry, I'm having trouble connecting right now. Please try again.",
+          leadData: {},
+          readyToGenerate: false,
+        },
+        { status: res.status }
+      );
+    }
 
     const data = await res.json();
     let reply =

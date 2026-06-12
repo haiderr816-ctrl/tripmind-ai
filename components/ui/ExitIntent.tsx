@@ -18,6 +18,9 @@ export default function ExitIntent() {
     if (hasShown) return;
 
     const handleMouseLeave = (e: MouseEvent) => {
+      // Check if already shown in this session before triggering
+      if (sessionStorage.getItem('exitIntentShown')) return;
+      
       // Only trigger when mouse leaves from top of viewport
       if (e.clientY <= 0) {
         setIsVisible(true);
