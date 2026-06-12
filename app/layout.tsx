@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     siteName: "TripMind AI",
     images: [
       {
-        url: "https://images.unsplash.com/photo-1499856871958-5b9357976b82?q=80&w=1200",
+        url: 'https://tripmind-ai-kappa.vercel.app/og-image.png',
         width: 1200,
         height: 630,
         alt: "TripMind AI - Smart Travel Planner",
