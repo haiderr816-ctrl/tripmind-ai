@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://tripmind-ai-kappa.vercel.app",
   },
+  other: {
+    "google-adsense-account": "ca-pub-XXXXXXXXXXXXXXXX",
+  },
   openGraph: {
     title: "TripMind AI — Plan Your Perfect Trip with AI",
     description: "AI-powered travel planning. Get a full day-by-day itinerary with hotels, flights, food and activities in under 30 seconds.",
