@@ -13,6 +13,7 @@ import {
   getConversation,
 } from "@/lib/db/conversation";
 import { UsageAction } from "@prisma/client";
+import { ensureUserExists } from "@/lib/ensure-user";
 
 const SYSTEM_PROMPT = `You are Sarah, a friendly Personal Travel Manager at TripMind AI with 10+ years of experience.
 
@@ -73,6 +74,11 @@ export async function POST(req: NextRequest) {
       await parseJsonBody(req, agentBodySchema);
 
     const { userId } = await auth();
+
+    // Sync user to database (Node.js runtime)
+    if (userId) {
+      await ensureUserExists();
+    }
 
     let conversationId = incomingConversationId;
     if (conversationId) {

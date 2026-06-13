@@ -1,5 +1,4 @@
-import { clerkMiddleware, createRouteMatcher, clerkClient } from "@clerk/nextjs/server";
-import { upsertUser } from "@/lib/db/user";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -13,18 +12,6 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
-
-  if (userId) {
-    try {
-      const client = await clerkClient();
-      const clerkUser = await client.users.getUser(userId);
-      await upsertUser(clerkUser);
-    } catch (error) {
-      console.error("Failed to upsert user:", error);
-    }
-  }
-
   if (isProtectedRoute(req)) {
     await auth.protect();
   }

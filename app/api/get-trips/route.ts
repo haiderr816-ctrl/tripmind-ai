@@ -2,6 +2,7 @@
 import { requireAuth } from "@/lib/auth";
 import { apiSuccess } from "@/lib/api-response";
 import { handleApiError } from "@/lib/api-error";
+import { ensureUserExists } from "@/lib/ensure-user";
 
 export async function GET() {
   try {
@@ -9,6 +10,9 @@ export async function GET() {
     if ("error" in authResult) {
       return authResult.error;
     }
+
+    // Sync user to database (Node.js runtime)
+    await ensureUserExists();
 
     const trips = await prisma.trip.findMany({
       where: { userId: authResult.userId },
