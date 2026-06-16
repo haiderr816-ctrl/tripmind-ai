@@ -3,7 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import Script from "next/script";
 import dynamic from "next/dynamic";
-import TravelAgent from "@/components/TravelAgent";
+import ChatAgent from "@/components/ChatAgent";
 import "./globals.css";
 
 const plusJakarta = Plus_Jakarta_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"] });
@@ -89,7 +89,7 @@ export default function RootLayout({
         </head>
         <body className={plusJakarta.className}>
           {children}
-          <TravelAgent />
+          <ChatAgent />
           <ExitIntent />
           <StickyCtA />
         </body>

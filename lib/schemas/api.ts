@@ -1,5 +1,4 @@
 import { z } from "zod";
-
 export const agentBodySchema = z.object({
   messages: z
     .array(
@@ -8,7 +7,6 @@ export const agentBodySchema = z.object({
         content: z.string().max(10_000),
       })
     )
-    .min(1)
     .max(100),
   leadData: z
     .object({
@@ -27,19 +25,15 @@ export const agentBodySchema = z.object({
     .default({}),
   conversationId: z.string().optional(),
 });
-
 export const checkoutBodySchema = z.object({
   email: z.string().email(),
 });
-
 export const tripIdQuerySchema = z.object({
   id: z.string().min(1),
 });
-
 export const photoQuerySchema = z.object({
   query: z.string().min(1).max(200),
 });
-
 export const generateItineraryBodySchema = z.object({
   destination: z.string().min(1).max(200),
   startDate: z.string().min(1),
@@ -47,7 +41,6 @@ export const generateItineraryBodySchema = z.object({
   budget: z.string().optional(),
   interests: z.string().optional(),
 });
-
 export const itineraryBodySchema = z.object({
   destination: z.string().min(1).max(200),
   country: z.string().optional(),
@@ -57,7 +50,6 @@ export const itineraryBodySchema = z.object({
   budget: z.string().optional(),
   interests: z.string().optional(),
 });
-
 export const saveLeadBodySchema = z.object({
   name: z.string().optional(),
   email: z.string().email(),
@@ -74,7 +66,6 @@ export const saveLeadBodySchema = z.object({
   utm_campaign: z.string().optional(),
   source: z.string().optional(),
 });
-
 export const saveTripBodySchema = z.object({
   destination: z.string().min(1),
   startDate: z.string().min(1),
