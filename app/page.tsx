@@ -6,7 +6,7 @@ import { useAuth, SignInButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Sparkles, ArrowRight, Mail, MapPin, Brain, MessageCircle, FileText, Globe, Shield, Plane, Zap, Check, Send } from "lucide-react";
+import { Sparkles, MapPin, Brain, MessageCircle, FileText, Globe, Shield, Plane, Zap, Check, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,15 @@ const organizationJsonLd = {
   ]
 };
 
+const SLIDES = [
+  { url: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?q=80&w=2670", name: "Dubai" },
+  { url: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=2673", name: "Paris" },
+  { url: "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=2670", name: "Tokyo" },
+  { url: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?q=80&w=2670", name: "Bali" },
+  { url: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=2670", name: "London" },
+  { url: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?q=80&w=2670", name: "New York" },
+];
+
 export default function Home() {
   const { isSignedIn } = useAuth();
   const router = useRouter();
@@ -50,6 +59,14 @@ export default function Home() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [leadSubmitted, setLeadSubmitted] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmitLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +96,7 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
+
       {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-md border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -88,9 +106,7 @@ export default function Home() {
                 <div className="w-8 h-8 bg-accent rounded-xl flex items-center justify-center shadow-md shadow-accent/20">
                   <Sparkles size={16} className="text-white" />
                 </div>
-                <span className="text-xl font-bold text-primary">
-                  TripMind AI
-                </span>
+                <span className="text-xl font-bold text-primary">TripMind AI</span>
               </Link>
               <div className="hidden md:flex gap-6">
                 <a href="#features" className="text-muted-foreground hover:text-primary transition font-medium text-sm">Features</a>
@@ -120,22 +136,56 @@ export default function Home() {
 
       {/* HERO Section */}
       <PageTransition>
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-surface to-primary">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600 rounded-full blur-3xl animate-pulse delay-1000" />
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+
+          {/* Slideshow Background */}
+          <div className="absolute inset-0 z-0">
+            {SLIDES.map((slide, i) => (
+              <div
+                key={i}
+                className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+                style={{
+                  backgroundImage: `url(${slide.url})`,
+                  opacity: i === currentSlide ? 1 : 0,
+                }}
+              />
+            ))}
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-black/60 z-10" />
           </div>
-          
-          <div className="relative z-10 max-w-5xl mx-auto px-4 text-center pt-20 pb-32">
+
+          {/* Slide indicators */}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            {SLIDES.map((slide, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`transition-all duration-300 rounded-full ${
+                  i === currentSlide
+                    ? 'w-8 h-2 bg-white'
+                    : 'w-2 h-2 bg-white/50 hover:bg-white/75'
+                }`}
+              />
+            ))}
+          </div>
+
+          {/* Current destination name */}
+          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20">
+            <p className="text-white/70 text-sm font-medium tracking-widest uppercase">
+              {SLIDES[currentSlide].name}
+            </p>
+          </div>
+
+          <div className="relative z-20 max-w-5xl mx-auto px-4 text-center pt-20 pb-32">
             <Badge variant="pro" className="mb-6">
               <Sparkles size={12} className="mr-2" />
               AI-Powered Travel Planning
             </Badge>
-            <h1 className="text-5xl md:text-7xl font-extrabold text-primary-foreground mb-6 leading-tight">
+            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight">
               Plan Your Perfect Trip<br />
               with <span className="text-accent">AI</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
               TripMind AI creates fully personalized itineraries, finds the best deals, and manages your entire journey — all powered by AI.
             </p>
 
@@ -265,9 +315,6 @@ export default function Home() {
               { step: "03", title: "Download & Go", desc: "Download your PDF itinerary, book with confidence, and enjoy your trip. Sarah is always on standby to help.", icon: Plane },
             ].map((item, i) => (
               <div key={item.step} className="text-center relative">
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-8 left-[calc(50%+40px)] right-[-calc(50%-40px)] h-0.5 bg-gradient-to-r from-accent/20 to-accent/20 w-full" />
-                )}
                 <div className="w-16 h-16 bg-accent text-white rounded-2xl flex items-center justify-center text-2xl font-bold mx-auto mb-5 shadow-lg shadow-accent/30">
                   {item.step}
                 </div>
@@ -307,14 +354,7 @@ export default function Home() {
                 required
               />
               <Button variant="accent" size="lg" className="w-full mt-4" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>Sending...</>
-                ) : (
-                  <>
-                    <Send size={18} className="mr-2" />
-                    Get Free Consultation
-                  </>
-                )}
+                {isSubmitting ? <>Sending...</> : <><Send size={18} className="mr-2" />Get Free Consultation</>}
               </Button>
             </form>
           )}
@@ -338,8 +378,7 @@ export default function Home() {
             <ul className="space-y-3 mb-8">
               {["2 AI itineraries per month", "Basic trip planning", "PDF export", "Save & view trips"].map((f) => (
                 <li key={f} className="flex items-center gap-3 text-muted-foreground text-sm">
-                  <Check size={16} className="text-success" />
-                  {f}
+                  <Check size={16} className="text-success" />{f}
                 </li>
               ))}
             </ul>
@@ -357,15 +396,13 @@ export default function Home() {
             <ul className="space-y-3 mb-8">
               {["Unlimited AI itineraries", "AI Travel Manager Sarah", "PDF export with branding", "Hotel & flight comparisons", "Priority support", "Cancel anytime"].map((f) => (
                 <li key={f} className="flex items-center gap-3 text-muted-foreground text-sm">
-                  <Check size={16} className="text-success" />
-                  {f}
+                  <Check size={16} className="text-success" />{f}
                 </li>
               ))}
             </ul>
             <Link href="/pricing">
               <Button variant="accent" className="w-full">
-                <Zap size={16} className="mr-2" />
-                Start Pro — $3/month
+                <Zap size={16} className="mr-2" />Start Pro — $3/month
               </Button>
             </Link>
           </Card>
