@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: "znjjWcgwggRfCQ4",
+    google: "znjjWcgwggRfCQ4OifGxjBfb-B1XgQ_VeWAQAk9EpJE",
   },
 };
 
@@ -97,3 +97,4 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
+
