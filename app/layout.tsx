@@ -61,6 +61,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
+      other: { "p:domain_verify": "4444d5084c2ce174529e0d4de9a80efd" },
     google: "znjjWcgwggRfCQ4OifGxjBfb-B1XgQ_VeWAQAk9EpJE",
   },
 };
@@ -97,4 +98,7 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
+
+
+
 
