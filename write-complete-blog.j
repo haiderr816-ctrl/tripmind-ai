@@ -1,4 +1,6 @@
-import { Metadata } from 'next';
+const fs = require('fs');
+
+const content = `import { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, Clock, ArrowRight, Sparkles, MapPin, Check, Plane, DollarSign, Sun, CloudRain, Send } from 'lucide-react';
@@ -17,7 +19,7 @@ const blogPosts: Record<string, any> = {
     date: '2026-01-15',
     readTime: '8 min read',
     author: 'TripMind AI',
-    content: `
+    content: \`
       <h2 class="text-2xl font-bold text-primary mb-4">Understanding Dubai Climate</h2>
       <p class="text-muted-foreground mb-6">Dubai sits in the Arabian Desert and experiences one of the world most extreme desert climates. Summers are brutally hot while winters are warm and pleasant. Knowing when to visit can make or break your Dubai experience.</p>
 
@@ -87,7 +89,7 @@ const blogPosts: Record<string, any> = {
 
       <h2 class="text-2xl font-bold text-primary mb-4">Final Verdict: When Should You Visit Dubai?</h2>
       <p class="text-muted-foreground mb-6">If budget is no concern — visit December or January for the absolute best experience. If you want value — October or November gives you great weather at lower prices. If you are on a tight budget — July or August with a fully indoor itinerary can be surprisingly good value. Whatever time you choose, Dubai delivers a world-class experience.</p>
-    `,
+    \`,
     tags: ['Dubai', 'Travel Tips', 'Weather'],
   },
   'paris-travel-guide': {
@@ -97,7 +99,7 @@ const blogPosts: Record<string, any> = {
     date: '2026-01-10',
     readTime: '10 min read',
     author: 'TripMind AI',
-    content: `
+    content: \`
       <h2 class="text-2xl font-bold text-primary mb-4">Why Paris Should Be Your Next Destination</h2>
       <p class="text-muted-foreground mb-6">Paris is one of those cities that lives up to every expectation. The architecture, the food, the art, the romance — it all comes together in a way no other city on earth can match. Whether it is your first visit or your tenth, Paris always has something new to offer. This complete guide covers everything a first-time visitor needs to know to have the perfect Paris experience without wasting money or time.</p>
 
@@ -180,7 +182,7 @@ const blogPosts: Record<string, any> = {
 
       <h2 class="text-2xl font-bold text-primary mb-4">Final Thoughts on Paris</h2>
       <p class="text-muted-foreground mb-6">Paris rewards slow travel. Do not try to rush through every attraction in 2 days. Pick a neighbourhood, sit in a cafe, watch the city move. The best Paris moments are not inside museums — they are on the streets, in the markets, along the Seine at golden hour. Let TripMind AI build your complete personalised Paris itinerary in seconds.</p>
-    `,
+    \`,
     tags: ['Paris', 'Travel Guide', 'Europe'],
   },
   'tokyo-on-a-budget': {
@@ -190,7 +192,7 @@ const blogPosts: Record<string, any> = {
     date: '2026-01-05',
     readTime: '12 min read',
     author: 'TripMind AI',
-    content: `
+    content: \`
       <h2 class="text-2xl font-bold text-primary mb-4">Free Attractions in Tokyo</h2>
       <p class="text-muted-foreground mb-6">Tokyo offers many free experiences that are just as impressive as paid attractions. From temples to parks, you can explore the city without spending much.</p>
 
@@ -199,7 +201,7 @@ const blogPosts: Record<string, any> = {
 
       <h2 class="text-2xl font-bold text-primary mb-4">Transportation Tips</h2>
       <p class="text-muted-foreground mb-4">Get a JR Pass for unlimited travel on JR lines. Consider day passes for specific areas. Walking is also a great way to explore neighborhoods.</p>
-    `,
+    \`,
     tags: ['Tokyo', 'Budget Travel', 'Japan'],
   },
   'bali-itinerary-7-days': {
@@ -209,7 +211,7 @@ const blogPosts: Record<string, any> = {
     date: '2026-01-20',
     readTime: '15 min read',
     author: 'TripMind AI',
-    content: `
+    content: \`
       <h2 class="text-2xl font-bold text-primary mb-4">Day 1-2: Ubud - Cultural Heart</h2>
       <p class="text-muted-foreground mb-6">Start your journey in Ubud, the cultural capital of Bali. Visit rice terraces, temples, and experience traditional arts.</p>
 
@@ -218,7 +220,7 @@ const blogPosts: Record<string, any> = {
 
       <h2 class="text-2xl font-bold text-primary mb-4">Day 5-7: Nusa Penida - Adventure</h2>
       <p class="text-muted-foreground mb-4">Take a boat to Nusa Penida for dramatic cliffs, pristine beaches, and incredible snorkeling spots.</p>
-    `,
+    \`,
     tags: ['Bali', 'Itinerary', 'Indonesia'],
   },
   'london-hidden-gems': {
@@ -228,7 +230,7 @@ const blogPosts: Record<string, any> = {
     date: '2026-01-25',
     readTime: '9 min read',
     author: 'TripMind AI',
-    content: `
+    content: \`
       <h2 class="text-2xl font-bold text-primary mb-4">Secret Gardens and Parks</h2>
       <p class="text-muted-foreground mb-6">Beyond Hyde Park, London has many hidden green spaces. Discover secret gardens tucked away in the city.</p>
 
@@ -237,7 +239,7 @@ const blogPosts: Record<string, any> = {
 
       <h2 class="text-2xl font-bold text-primary mb-4">Neighbourhood Exploration</h2>
       <p class="text-muted-foreground mb-4">Each London neighbourhood has its own character. Explore Shoreditch, Greenwich, and Camden for authentic local experiences.</p>
-    `,
+    \`,
     tags: ['London', 'Hidden Gems', 'UK'],
   },
   'new-york-first-time': {
@@ -247,7 +249,7 @@ const blogPosts: Record<string, any> = {
     date: '2026-02-01',
     readTime: '11 min read',
     author: 'TripMind AI',
-    content: `
+    content: \`
       <h2 class="text-2xl font-bold text-primary mb-4">Getting Around NYC</h2>
       <p class="text-muted-foreground mb-6">The subway is the most efficient way to navigate New York. Consider a MetroCard for unlimited rides. Walking is also a great way to explore.</p>
 
@@ -261,7 +263,7 @@ const blogPosts: Record<string, any> = {
 
       <h2 class="text-2xl font-bold text-primary mb-4">Dining Recommendations</h2>
       <p class="text-muted-foreground mb-4">From street food to fine dining, NYC has it all. Try pizza, bagels, and diverse ethnic cuisines throughout the city.</p>
-    `,
+    \`,
     tags: ['New York', 'Travel Guide', 'USA'],
   },
 };
@@ -380,3 +382,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     </div>
   );
 }
+`;
+
+fs.writeFileSync('app/blog/[slug]/page.tsx', content);
+console.log('SUCCESS - Complete file written!');
+console.log('File size:', content.length, 'characters');
